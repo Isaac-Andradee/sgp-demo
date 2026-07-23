@@ -27,14 +27,12 @@ interface Route {
   method: string;
   pattern: RegExp;
   handler: Handler;
-  /** Continua respondendo mesmo com o modo de manutenção ativo. */
-  publicInMaintenance?: boolean;
 }
 
 const routes: Route[] = [];
 
-function on(method: string, pattern: RegExp, handler: Handler, publicInMaintenance = false) {
-  routes.push({ method: method.toUpperCase(), pattern, handler, publicInMaintenance });
+function on(method: string, pattern: RegExp, handler: Handler) {
+  routes.push({ method: method.toUpperCase(), pattern, handler });
 }
 
 /** Latência artificial: sem ela os spinners nunca aparecem e a demo parece falsa. */
@@ -45,21 +43,18 @@ const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 // que têm parâmetro (ex.: /users/security-status antes de /users/:id).
 
 // Sistema e setup
-on('GET', /^\/system\/status$/, () => {
-  const m = db.getMaintenance();
-  return {
-    maintenance: m.active,
-    maintenanceMessage: m.message ?? '',
-    maintenanceWindowStart: m.windowStart,
-    maintenanceExpectedReturn: m.expectedReturn,
-    announcement: m.announcementEnabled && m.announcementMessage
-      ? { message: m.announcementMessage, scheduledAt: m.announcementScheduledAt }
-      : null,
-  };
-}, true);
+// Status público. A Central de Manutenção pertence ao perfil DEV, fora desta
+// demonstração, então não há como ativar a manutenção: a resposta é constante.
+on('GET', /^\/system\/status$/, () => ({
+  maintenance: false,
+  maintenanceMessage: '',
+  maintenanceWindowStart: null,
+  maintenanceExpectedReturn: null,
+  announcement: null,
+}));
 
-on('GET', /^\/setup$/, () => ({ needsSetup: false }), true);
-on('POST', /^\/setup$/, () => { throw new DemoError(409, 'O sistema já está configurado.'); }, true);
+on('GET', /^\/setup$/, () => ({ needsSetup: false }));
+on('POST', /^\/setup$/, () => { throw new DemoError(409, 'O sistema já está configurado.'); });
 
 // Autenticação — sempre liberada, para o visitante nunca ficar preso na demo.
 on('POST', /^\/auth\/login$/, ({ body }) => {
@@ -69,24 +64,24 @@ on('POST', /^\/auth\/login$/, ({ body }) => {
     username: user.username, fullName: user.fullName, role: user.role,
     mustChangePassword: false,
   };
-}, true);
+});
 
-on('POST', /^\/auth\/logout$/, () => { db.logout(); return { message: 'Sessão encerrada.' }; }, true);
+on('POST', /^\/auth\/logout$/, () => { db.logout(); return { message: 'Sessão encerrada.' }; });
 
 on('GET', /^\/auth\/me$/, () => {
   const user = db.currentUser();
   if (!user) throw new DemoError(401, 'Não autenticado.');
   return user;
-}, true);
+});
 
-on('PUT', /^\/auth\/me$/, ({ body }) => db.updateOwnProfile(String(body.fullName ?? '')), true);
+on('PUT', /^\/auth\/me$/, ({ body }) => db.updateOwnProfile(String(body.fullName ?? '')));
 
 on('GET', /^\/auth\/suggested-usernames$/, ({ params }) =>
-  ({ suggestions: db.suggestUsernames(params.get('fullName') ?? '') }), true);
+  ({ suggestions: db.suggestUsernames(params.get('fullName') ?? '') }));
 
 on('POST', /^\/auth\/(forgot-password|reset-password|recover-with-code)$/, () => {
   throw new DemoError(400, 'Recuperação de senha não está disponível no modo demonstração.');
-}, true);
+});
 
 // Equipamentos — rotas literais primeiro
 on('GET', /^\/equipments\/types$/, () => Object.keys(EQUIPMENT_TYPE_LABELS).filter((t) => t !== 'MOUSE'));
@@ -200,42 +195,6 @@ on('GET', /^\/audit$/, ({ params }) => db.listAudit(
   params.get('actionType') ?? undefined,
 ));
 
-// Central de manutenção (DEV) — liberada mesmo em manutenção, como no backend
-on('GET', /^\/dev\/maintenance\/status$/, () => ({ active: db.getMaintenance().active }), true);
-on('POST', /^\/dev\/maintenance\/enable$/, () => { db.setMaintenance(true); return { message: 'Modo de manutenção ativado.' }; }, true);
-on('POST', /^\/dev\/maintenance\/disable$/, () => { db.setMaintenance(false); return { message: 'Modo de manutenção desativado.' }; }, true);
-
-on('GET', /^\/dev\/settings$/, () => {
-  const m = db.getMaintenance();
-  return {
-    maintenanceMessage: m.message,
-    maintenanceWindowStart: m.windowStart,
-    maintenanceExpectedReturn: m.expectedReturn,
-    announcementEnabled: m.announcementEnabled,
-    announcementMessage: m.announcementMessage,
-    announcementScheduledAt: m.announcementScheduledAt,
-  };
-}, true);
-
-on('PUT', /^\/dev\/maintenance-settings$/, ({ body }) => {
-  db.updateMaintenanceSettings(body as never);
-  return { message: 'Configurações atualizadas.' };
-}, true);
-
-on('PUT', /^\/dev\/announcement$/, ({ body }) => {
-  db.updateAnnouncement(body as never);
-  return { message: 'Aviso atualizado.' };
-}, true);
-
-on('GET', /^\/dev\/system\/info$/, () => ({
-  javaVersion: '— (modo demonstração, sem backend)',
-  javaVendor: 'n/d',
-  springVersion: 'n/d',
-  osName: 'Navegador',
-  maintenanceActive: db.getMaintenance().active,
-  environment: 'demo',
-}), true);
-
 // Relatórios em PDF
 on('GET', /^\/reports\/inventory$/, ({ params }) => {
   const items = db.listEquipments().filter((e) => {
@@ -336,13 +295,6 @@ export const demoAdapter: AxiosAdapter = async (config) => {
 
   await delay(120 + Math.random() * 220);
 
-  // A Central de Manutenção é exclusiva do perfil DEV, que está fora da
-  // demonstração. Como não há usuário DEV, as rotas são fechadas na própria
-  // camada de API — e não apenas escondidas pelo RoleGuard da interface.
-  if (path.startsWith('/dev/')) {
-    return Promise.reject(axiosError(config, 403, 'Área restrita ao perfil técnico, indisponível no modo demonstração.'));
-  }
-
   const route = routes.find((r) => r.method === method && r.pattern.test(path));
 
   const settle = (status: number, data: unknown): Promise<AxiosResponse> => {
@@ -358,15 +310,6 @@ export const demoAdapter: AxiosAdapter = async (config) => {
 
   if (!route) {
     return settle(404, { message: `Rota não implementada no modo demonstração: ${method} ${path}` });
-  }
-
-  // Modo de manutenção: 503 para tudo, exceto rotas liberadas e usuários DEV
-  // (mesmo comportamento do MaintenanceFilter do backend).
-  if (db.getMaintenance().active && !route.publicInMaintenance) {
-    const user = db.currentUser();
-    if (user?.role !== 'DEV') {
-      return settle(503, { message: 'Sistema em manutenção.' });
-    }
   }
 
   try {

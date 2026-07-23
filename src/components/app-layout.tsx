@@ -16,7 +16,6 @@ import {
   Clock,
   WifiOff,
   ShieldCheck,
-  Terminal,
   History,
   FileText,
 } from "lucide-react";
@@ -71,7 +70,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
-  const { isAdmin, isDev } = usePermissions();
+  const { isAdmin } = usePermissions();
   const isOnline = useOnlineStatus();
 
   // Aviso de manutenção: o backend (runtime, editável no painel DEV) tem prioridade;
@@ -97,9 +96,6 @@ export function AppLayout() {
   const bannerVisible = !!activeBanner && dismissedMsg !== activeBanner.message;
 
   const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
-  const devNavItems = isDev ? [
-    { id: "dev", label: "Dev Panel", title: "Dev Panel", icon: Terminal, path: "/dev" },
-  ] : [];
   const currentNav = navItems.find((item) => item.path === location.pathname) || navItems[0];
   const isPerfilPage = location.pathname === "/perfil";
   const pageLabel = isPerfilPage ? "Meu Perfil" : currentNav.label;
@@ -208,35 +204,6 @@ export function AppLayout() {
             );
           })}
 
-          {/* Seção exclusiva DEV */}
-          {devNavItems.length > 0 && (
-            <>
-              <div className="pt-3 pb-1">
-                <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 px-3" style={{ fontWeight: 600 }}>
-                  Desenvolvedor
-                </p>
-              </div>
-              {devNavItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-lg transition-all duration-200 ${
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-foreground border-l-[3px] border-sidebar-primary pl-[9px]"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent pl-[9px]"
-                    }`}
-                    style={{ fontWeight: isActive ? 600 : 400 }}
-                  >
-                    <Icon className={`w-[18px] h-[18px] ${isActive ? "text-sidebar-primary" : ""}`} />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </>
-          )}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">

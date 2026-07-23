@@ -35,9 +35,9 @@ parte do sistema que menos aparece em captura de tela.
 
 A faixa amarela do topo permite **trocar de perfil a qualquer momento** e **resetar os dados**.
 
-> O sistema real tem um quarto perfil, `DEV`, com os controles de manutenção e de inspeção do
-> ambiente. Ele foi **deixado de fora desta demonstração** de propósito: as rotas correspondentes
-> respondem `403`.
+> O sistema real tem um quarto perfil, `DEV`, com a Central de Manutenção e a inspeção do
+> ambiente. Ele foi **deixado de fora desta demonstração** de propósito, junto com a tela e as
+> rotas correspondentes.
 
 ### Roteiro sugerido (3 minutos)
 

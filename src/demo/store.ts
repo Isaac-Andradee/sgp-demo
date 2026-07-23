@@ -31,20 +31,9 @@ import { buildSeed, STORAGE_SECTOR } from './seed';
 
 /**
  * Versionado: mudar a chave descarta estados antigos incompatíveis.
- * v2 — remoção do perfil DEV. Sem ele ninguém desligaria o modo de manutenção,
- * então um estado v1 com manutenção ativa deixaria o visitante preso no 503.
+ * v3 — remoção do perfil DEV e da simulação de modo de manutenção.
  */
-const STORAGE_KEY = 'sgp-demo-state-v2';
-
-export interface MaintenanceState {
-  active: boolean;
-  message: string | null;
-  windowStart: string | null;
-  expectedReturn: string | null;
-  announcementEnabled: boolean;
-  announcementMessage: string | null;
-  announcementScheduledAt: string | null;
-}
+const STORAGE_KEY = 'sgp-demo-state-v3';
 
 export interface DemoState {
   sectors: SectorResponseDTO[];
@@ -54,7 +43,6 @@ export interface DemoState {
   audit: AuditLog[];
   /** username da sessão ativa, ou null. */
   session: string | null;
-  maintenance: MaintenanceState;
 }
 
 // ─── Erro de negócio ──────────────────────────────────────────────────────────
@@ -73,19 +61,7 @@ export class DemoError extends Error {
 
 function freshState(): DemoState {
   const seed = buildSeed();
-  return {
-    ...seed,
-    session: null,
-    maintenance: {
-      active: false,
-      message: 'Estamos realizando uma manutenção programada. O sistema retorna em breve.',
-      windowStart: null,
-      expectedReturn: null,
-      announcementEnabled: false,
-      announcementMessage: null,
-      announcementScheduledAt: null,
-    },
-  };
+  return { ...seed, session: null };
 }
 
 let state: DemoState = load();
@@ -643,34 +619,5 @@ export function listAudit(page: number, size: number, actorUsername?: string, ac
 
 export function recordReportGenerated(kind: string) {
   audit('REPORT_GENERATED', 'System', '', `Relatório (${kind}) gerado em PDF.`);
-  persist();
-}
-
-// ─── Manutenção ───────────────────────────────────────────────────────────────
-
-export function getMaintenance(): MaintenanceState {
-  return state.maintenance;
-}
-
-export function setMaintenance(active: boolean) {
-  state.maintenance.active = active;
-  audit(active ? 'MAINTENANCE_ENABLED' : 'MAINTENANCE_DISABLED', 'System', '',
-    active ? 'Modo de manutenção ativado.' : 'Modo de manutenção desativado.');
-  persist();
-}
-
-export function updateMaintenanceSettings(payload: { message?: string; windowStart?: string; expectedReturn?: string }) {
-  if (payload.message !== undefined) state.maintenance.message = payload.message;
-  if (payload.windowStart !== undefined) state.maintenance.windowStart = payload.windowStart || null;
-  if (payload.expectedReturn !== undefined) state.maintenance.expectedReturn = payload.expectedReturn || null;
-  audit('MAINTENANCE_SETTINGS_UPDATED', 'System', '', 'Configurações da tela de manutenção atualizadas.');
-  persist();
-}
-
-export function updateAnnouncement(payload: { enabled: boolean; message?: string; scheduledAt?: string }) {
-  state.maintenance.announcementEnabled = payload.enabled;
-  state.maintenance.announcementMessage = payload.message ?? null;
-  state.maintenance.announcementScheduledAt = payload.scheduledAt || null;
-  audit('ANNOUNCEMENT_UPDATED', 'System', '', 'Aviso do sistema atualizado.');
   persist();
 }

@@ -12,7 +12,6 @@ import { UsuariosPage } from "./components/usuarios-page";
 import { RelatoriosPage } from "./components/relatorios-page";
 import { PerfilPage } from "./components/perfil-page";
 import { AuditoriaPage } from "./components/auditoria-page";
-import { DevPage } from "./components/dev-page";
 import { MaintenancePage } from "./components/maintenance-page";
 import { ContaDesativadaPage } from "./components/conta-desativada-page";
 import { HistoricoDefeitosPage } from "./components/historico-defeitos-page";
@@ -29,14 +28,6 @@ function AdminOnly({ children }: { children: React.ReactNode }) {
     <AuthGuard>
       {/* DEV herda todas as permissões de ADMIN — RoleGuard aceita ambos */}
       <RoleGuard requiredRole="ADMIN">{children}</RoleGuard>
-    </AuthGuard>
-  );
-}
-
-function DevOnly({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthGuard>
-      <RoleGuard requiredRole="DEV">{children}</RoleGuard>
     </AuthGuard>
   );
 }
@@ -75,7 +66,6 @@ export const router = createBrowserRouter([
       { path: "usuarios",  element: <AdminOnly><UsuariosPage /></AdminOnly>  },
       { path: "relatorios", element: <AdminOnly><RelatoriosPage /></AdminOnly> },
       { path: "auditoria", element: <AdminOnly><AuditoriaPage /></AdminOnly> },
-      { path: "dev",       element: <DevOnly><DevPage /></DevOnly>           },
       { path: "perfil",    element: <Auth><PerfilPage /></Auth>              },
     ],
   },
