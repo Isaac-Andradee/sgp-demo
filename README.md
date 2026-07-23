@@ -4,7 +4,7 @@
 > TI em produção numa administração pública desde julho de 2026. **Todos os dados são fictícios** e
 > **não há backend** — a API é simulada no próprio navegador.
 
-**▶ Demonstração ao vivo:** _(preencher com a URL após o deploy)_
+**▶ Demonstração ao vivo:** [Demonstração](https://sgp-demo-delta.vercel.app/login)
 
 ---
 
