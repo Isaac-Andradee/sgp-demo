@@ -120,11 +120,13 @@ export const SEED_USERS: UserResponse[] = [
     mustChangePassword: false,
   },
   {
+    // Segundo administrador: mantém a contagem de ADMINs ativos em 2, que é o
+    // mínimo recomendado pelo próprio sistema (alerta de recuperação de acesso).
     id: uid('b', 4),
-    username: 'dev.demo',
-    email: 'dev.demo@exemplo.gov.br',
-    fullName: 'Técnico Responsável',
-    role: 'DEV',
+    username: 'chefia.demo',
+    email: 'chefia.demo@exemplo.gov.br',
+    fullName: 'Chefia do Setor',
+    role: 'ADMIN',
     enabled: true,
     lastLoginAt: isoDaysAgo(0, 7),
     previousLoginAt: isoDaysAgo(1, 18),
@@ -153,12 +155,16 @@ export const SEED_USERS: UserResponse[] = [
   },
 ];
 
-/** Contas de acesso rápido exibidas na tela de login da demo. */
+/**
+ * Contas de acesso rápido exibidas na tela de login da demo.
+ *
+ * O perfil DEV do sistema real (controles de manutenção e inspeção do ambiente)
+ * é deliberadamente omitido da demonstração — ver `login()` em `store.ts`.
+ */
 export const DEMO_ACCOUNTS = [
   { username: 'admin.demo', role: 'ADMIN' as const, label: 'Administrador', hint: 'Gerencia usuários, setores, relatórios e auditoria' },
   { username: 'usuario.demo', role: 'USER' as const, label: 'Operador', hint: 'Cadastra, movimenta e troca equipamentos' },
   { username: 'visualizador.demo', role: 'VIEWER' as const, label: 'Consulta', hint: 'Somente leitura — botões de escrita ficam ocultos' },
-  { username: 'dev.demo', role: 'DEV' as const, label: 'Técnico', hint: 'Tudo, mais a Central de Manutenção' },
 ];
 
 // ─── Equipamentos ─────────────────────────────────────────────────────────────
@@ -283,7 +289,7 @@ export function buildSeed() {
   for (let i = 1; i <= 60; i++) {
     const action = pick(ACTIONS);
     const eq = pick(equipments);
-    const actor = pick(['admin.demo', 'usuario.demo', 'dev.demo', 'carla.duarte']);
+    const actor = pick(['admin.demo', 'usuario.demo', 'chefia.demo', 'carla.duarte']);
     audit.push({
       id: uid('f', i),
       actorUsername: actor,

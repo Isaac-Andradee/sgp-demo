@@ -24,7 +24,7 @@ Planilha guarda dado, mas não garante as três coisas que o controle patrimonia
 
 ## O que explorar na demonstração
 
-A tela de login oferece **quatro perfis**. Vale entrar em mais de um: o controle de acesso é a
+A tela de login oferece **três perfis**. Vale entrar em mais de um: o controle de acesso é a
 parte do sistema que menos aparece em captura de tela.
 
 | Perfil | O que enxerga |
@@ -32,9 +32,12 @@ parte do sistema que menos aparece em captura de tela.
 | **Consulta** (`VIEWER`) | Somente leitura — os botões de escrita desaparecem |
 | **Operador** (`USER`) | Cadastra, movimenta e troca equipamentos |
 | **Administrador** (`ADMIN`) | Tudo, mais usuários, setores, relatórios e auditoria |
-| **Técnico** (`DEV`) | Tudo, mais a Central de Manutenção |
 
 A faixa amarela do topo permite **trocar de perfil a qualquer momento** e **resetar os dados**.
+
+> O sistema real tem um quarto perfil, `DEV`, com os controles de manutenção e de inspeção do
+> ambiente. Ele foi **deixado de fora desta demonstração** de propósito: as rotas correspondentes
+> respondem `403`.
 
 ### Roteiro sugerido (3 minutos)
 
@@ -43,8 +46,7 @@ A faixa amarela do topo permite **trocar de perfil a qualquer momento** e **rese
 3. **Auditoria** — o registro da troca que você acabou de fazer, com autor, horário e IP.
    *É exatamente o que a planilha não fazia.*
 4. **Relatórios** — gera um PDF de verdade, montado no navegador.
-5. **Central de Manutenção** (perfil Técnico) — ative a manutenção, troque para outro perfil e veja
-   o sistema responder `503`; o Técnico continua trabalhando.
+5. **Troque para o perfil Consulta** pela faixa do topo e repare no que some da interface.
 
 ---
 
@@ -81,7 +83,6 @@ Ao cadastrar sem informar o status, o sistema o deduz:
   estava, em vez de um valor arbitrário.
 - **Patrimônio único** — cadastro duplicado é bloqueado com mensagem clara.
 - **Login padronizado** `nome.sobrenome`, com sufixo numérico em caso de colisão.
-- **Modo de manutenção** — `503` para todos, exceto o perfil Técnico.
 - **Auditoria** — toda operação relevante gera registro imutável.
 
 ---

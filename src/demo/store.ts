@@ -29,7 +29,12 @@ import type {
 } from '../types';
 import { buildSeed, STORAGE_SECTOR } from './seed';
 
-const STORAGE_KEY = 'sgp-demo-state-v1';
+/**
+ * Versionado: mudar a chave descarta estados antigos incompatíveis.
+ * v2 — remoção do perfil DEV. Sem ele ninguém desligaria o modo de manutenção,
+ * então um estado v1 com manutenção ativa deixaria o visitante preso no 503.
+ */
+const STORAGE_KEY = 'sgp-demo-state-v2';
 
 export interface MaintenanceState {
   active: boolean;
@@ -178,6 +183,10 @@ export function login(username: string): UserResponse {
   const user = state.users.find((u) => u.username.toLowerCase() === username.trim().toLowerCase());
   if (!user) throw new DemoError(401, 'Usuário ou senha inválidos.');
   if (user.enabled === false) throw new DemoError(401, 'Conta desativada. Acesso não autorizado.');
+  // O perfil DEV (Central de Manutenção e inspeção do ambiente) existe no sistema
+  // real, mas está fora da demonstração. Barra aqui também, e não só na lista de
+  // contas, para que ninguém entre digitando o login manualmente.
+  if (user.role === 'DEV') throw new DemoError(401, 'Perfil indisponível no modo demonstração.');
 
   user.previousLoginAt = user.lastLoginAt;
   user.lastLoginAt = nowIso();

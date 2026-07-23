@@ -336,6 +336,13 @@ export const demoAdapter: AxiosAdapter = async (config) => {
 
   await delay(120 + Math.random() * 220);
 
+  // A Central de Manutenção é exclusiva do perfil DEV, que está fora da
+  // demonstração. Como não há usuário DEV, as rotas são fechadas na própria
+  // camada de API — e não apenas escondidas pelo RoleGuard da interface.
+  if (path.startsWith('/dev/')) {
+    return Promise.reject(axiosError(config, 403, 'Área restrita ao perfil técnico, indisponível no modo demonstração.'));
+  }
+
   const route = routes.find((r) => r.method === method && r.pattern.test(path));
 
   const settle = (status: number, data: unknown): Promise<AxiosResponse> => {
