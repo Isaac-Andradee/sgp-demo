@@ -136,8 +136,13 @@ Detalhes que fazem a demo se comportar como o sistema real:
 | Gráficos | Recharts |
 
 **O sistema real** roda em Spring Boot 4 · Java 21 · PostgreSQL 16, com JWT em cookie `httpOnly`,
-Argon2, Flyway, ~34 classes de teste, CI/CD via GitHub Actions e GHCR, e backup diário
-automatizado.
+Argon2, Flyway, **1.068 testes automatizados** (531 no backend, 537 no frontend) com gate de
+cobertura no CI — 95,3% de linhas no backend e 94,7% no frontend —, CI/CD via GitHub Actions e
+GHCR, e backup diário automatizado.
+
+> Esta demonstração **não tem testes**: ela é uma vitrine estática do sistema, com backend
+> simulado no navegador (ver [Como a demo funciona sem backend](#como-a-demo-funciona-sem-backend)).
+> A suíte vive nos repositórios do sistema real.
 
 ---
 
