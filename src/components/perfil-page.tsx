@@ -27,7 +27,7 @@ function PasswordInput({
       <input
         type={show ? "text" : "password"}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => { onChange(e.target.value); setShow(false); }}
         required={required}
         placeholder={placeholder}
         className="w-full px-3 pr-10 py-2.5 border border-border rounded-lg focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] bg-background transition-all"
@@ -169,7 +169,7 @@ export function PerfilPage() {
             </div>
           </form>
           <div className="bg-muted rounded-lg p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1" style={{ fontWeight: 700 }}>Usuario</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1" style={{ fontWeight: 700 }}>Usuário</p>
             <p className="text-[14px] text-foreground" style={{ fontWeight: 500 }}>{user?.username}</p>
           </div>
           <div className="bg-muted rounded-lg p-3">

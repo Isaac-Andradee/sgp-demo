@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[SGP Demo] Erro não tratado:", error, info.componentStack);
+    console.error("[SGPT Demo] Erro não tratado:", error, info.componentStack);
   }
 
   handleReload = () => {
@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Network className="w-5 h-5 text-sky-300" />
             </div>
             <span className="text-white text-[20px]" style={{ fontWeight: 700 }}>
-              SGP <span className="text-sky-300">Demo</span>
+              SGPT <span className="text-sky-300">Demo</span>
             </span>
           </div>
 

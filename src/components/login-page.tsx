@@ -173,10 +173,10 @@ export function LoginPage() {
             <Network className="w-8 h-8 text-sky-300 dark:text-primary" />
           </div>
           <h1 className="text-white dark:text-foreground text-[28px] tracking-tight" style={{ fontWeight: 700 }}>
-            SGP <span className="text-sky-300 dark:text-primary">Demo</span>
+            SGPT <span className="text-sky-300 dark:text-primary">Demo</span>
           </h1>
           <p className="text-sky-200/60 dark:text-muted-foreground text-[13px] mt-1">
-            Sistema de Gestao Patrimonial
+            Sistema de Gestão do Parque Tecnológico
           </p>
         </div>
 
@@ -198,7 +198,7 @@ export function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-[12px] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>
-                  Usuario
+                  Usuário
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -212,7 +212,7 @@ export function LoginPage() {
                     }}
                     required
                     className={`w-full pl-10 pr-4 py-3 bg-background border rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all text-[14px] ${fieldErrors.username ? "border-red-500 dark:border-red-500" : "border-border"}`}
-                    placeholder="Digite seu usuario"
+                    placeholder="Digite seu usuário"
                   />
                 </div>
                 {fieldErrors.username && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.username}</p>}
@@ -229,6 +229,7 @@ export function LoginPage() {
                     onChange={(e) => {
                       const v = e.target.value;
                       setPassword(v);
+                      setShowPassword(false); // voltou a digitar: esconde de novo
                       setFieldError("password", v ? null : "Preencha a senha.");
                     }}
                     required

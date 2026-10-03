@@ -6,6 +6,7 @@ import { equipmentApi } from "../api/equipment.api";
 import type { EquipmentResponseDTO, DefectResponse } from "../types";
 import { EQUIPMENT_STATUS_LABELS, EQUIPMENT_STATUS_COLORS, normalizeEquipmentStatus, getEquipmentTypeLabel, isEquipmentWithoutAsset } from "../types";
 import { toast } from "sonner";
+import { usePermissions } from "../contexts/AuthContext";
 
 const DEFECT_DESCRIPTION_MAX = 500;
 
@@ -28,6 +29,8 @@ function formatDefectDate(iso: string) {
 
 export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Props) {
   const queryClient = useQueryClient();
+  // VIEWER (Consulta) só vê os defeitos: registrar, editar e resolver ficam ocultos.
+  const { canManageDefects } = usePermissions();
   const [defectFormOpen, setDefectFormOpen] = useState(false);
   const [defectDescription, setDefectDescription] = useState("");
   const [editingDefectId, setEditingDefectId] = useState<string | null>(null);
@@ -309,15 +312,17 @@ export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Prop
                   <History className="w-3.5 h-3.5" />
                   Ver histórico
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => setDefectFormOpen((v) => !v)}
-                  className="flex items-center gap-1.5 text-[12px] text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/50 px-2.5 py-1.5 rounded-lg transition-colors"
-                  style={{ fontWeight: 500 }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {defectFormOpen ? "Cancelar" : "Registrar defeito"}
-                </button>
+                {canManageDefects && (
+                  <button
+                    type="button"
+                    onClick={() => setDefectFormOpen((v) => !v)}
+                    className="flex items-center gap-1.5 text-[12px] text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/50 px-2.5 py-1.5 rounded-lg transition-colors"
+                    style={{ fontWeight: 500 }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {defectFormOpen ? "Cancelar" : "Registrar defeito"}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -408,6 +413,7 @@ export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Prop
                           <span>{formatDefectDate(d.reportedAt)}</span>
                           {d.reportedBy && <span>por {d.reportedBy}</span>}
                         </div>
+                        {canManageDefects && (
                         <div className="mt-2 flex items-center gap-3">
                           <button
                             type="button"
@@ -431,6 +437,7 @@ export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Prop
                             Marcar como resolvido
                           </button>
                         </div>
+                        )}
                       </>
                     )}
                   </li>

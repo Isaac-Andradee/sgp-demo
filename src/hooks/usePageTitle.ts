@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 
-const APP_NAME = "SGP Demo";
+const APP_NAME = "SGPT Demo";
 
 /**
  * Atualiza o título da aba do navegador.
- * Formato: "Nome da Página | SGP Demo"
- * Se nenhum título for passado, exibe apenas "SGP Demo".
+ * Formato: "Nome da Página | SGPT Demo"
+ * Se nenhum título for passado, exibe apenas "SGPT Demo".
  */
 export function usePageTitle(title?: string) {
   useEffect(() => {

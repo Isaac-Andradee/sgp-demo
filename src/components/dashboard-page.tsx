@@ -278,24 +278,24 @@ export function DashboardPage() {
 
   const kpiPcsTotalCard = { label: "Total de PCs", value: kpis?.kpiPcs?.totalGeral ?? "-", icon: Monitor, color: "text-primary", bg: "bg-sky-50 dark:bg-sky-950/50", border: "border-primary" };
   const kpiPcsCards = [
-    { label: "PCs Disponiveis", value: kpis?.kpiPcs?.totalDisponivel ?? "-", icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/50", border: "border-emerald-500", status: "DISPONIVEL" as EquipmentStatus },
+    { label: "PCs Disponíveis", value: kpis?.kpiPcs?.totalDisponivel ?? "-", icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/50", border: "border-emerald-500", status: "DISPONIVEL" as EquipmentStatus },
     { label: "PCs em Uso", value: kpis?.kpiPcs?.totalEmUso ?? "-", icon: Users, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-950/50", border: "border-sky-500", status: "EM_USO" as EquipmentStatus },
-    { label: "PCs Manutencao", value: kpis?.kpiPcs?.totalManutencao ?? "-", icon: Wrench, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50", border: "border-amber-500", status: "MANUTENCAO" as EquipmentStatus },
-    { label: "PCs Provisorios", value: kpis?.kpiPcs?.totalProvisorio ?? "-", icon: AlertTriangle, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/50", border: "border-rose-500", status: "PROVISORIO" as EquipmentStatus },
+    { label: "PCs Manutenção", value: kpis?.kpiPcs?.totalManutencao ?? "-", icon: Wrench, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50", border: "border-amber-500", status: "MANUTENCAO" as EquipmentStatus },
+    { label: "PCs Provisórios", value: kpis?.kpiPcs?.totalProvisorio ?? "-", icon: AlertTriangle, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/50", border: "border-rose-500", status: "PROVISORIO" as EquipmentStatus },
     { label: "PCs Baixado", value: kpis?.kpiPcs?.totalBaixado ?? "-", icon: Archive, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-800", border: "border-gray-400 dark:border-gray-600", status: "BAIXADO" as EquipmentStatus },
-    ...(isAdmin ? [{ label: "PCs Excluidos", value: kpis?.kpiPcs?.totalExcluido ?? "-", icon: Archive, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800", border: "border-slate-500", status: "EXCLUIDO" as EquipmentStatus }] : []),
-    { label: "PCs Inserviveis", value: kpis?.kpiPcs?.totalInservivel ?? "-", icon: AlertTriangle, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/50", border: "border-red-500", status: "INSERVIVEL" as EquipmentStatus },
+    ...(isAdmin ? [{ label: "PCs Excluídos", value: kpis?.kpiPcs?.totalExcluido ?? "-", icon: Archive, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800", border: "border-slate-500", status: "EXCLUIDO" as EquipmentStatus }] : []),
+    { label: "PCs Inservíveis", value: kpis?.kpiPcs?.totalInservivel ?? "-", icon: AlertTriangle, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/50", border: "border-red-500", status: "INSERVIVEL" as EquipmentStatus },
   ];
 
   const kpiEquipamentosTotalCard = { label: "Total de Equipamentos", value: kpis?.kpiEquipamentos?.totalGeral ?? "-", icon: Package, color: "text-primary", bg: "bg-sky-50 dark:bg-sky-950/50", border: "border-primary" };
   const kpiEquipamentosCards = [
-    { label: "Disponiveis", value: kpis?.kpiEquipamentos?.totalDisponivel ?? "-", icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/50", border: "border-emerald-500", status: "DISPONIVEL" as EquipmentStatus },
+    { label: "Disponíveis", value: kpis?.kpiEquipamentos?.totalDisponivel ?? "-", icon: Package, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/50", border: "border-emerald-500", status: "DISPONIVEL" as EquipmentStatus },
     { label: "Em Uso", value: kpis?.kpiEquipamentos?.totalEmUso ?? "-", icon: Users, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-950/50", border: "border-sky-500", status: "EM_USO" as EquipmentStatus },
-    { label: "Manutencao", value: kpis?.kpiEquipamentos?.totalManutencao ?? "-", icon: Wrench, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50", border: "border-amber-500", status: "MANUTENCAO" as EquipmentStatus },
-    { label: "Provisorios", value: kpis?.kpiEquipamentos?.totalProvisorio ?? "-", icon: AlertTriangle, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/50", border: "border-rose-500", status: "PROVISORIO" as EquipmentStatus },
+    { label: "Manutenção", value: kpis?.kpiEquipamentos?.totalManutencao ?? "-", icon: Wrench, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50", border: "border-amber-500", status: "MANUTENCAO" as EquipmentStatus },
+    { label: "Provisórios", value: kpis?.kpiEquipamentos?.totalProvisorio ?? "-", icon: AlertTriangle, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/50", border: "border-rose-500", status: "PROVISORIO" as EquipmentStatus },
     { label: "Baixado", value: kpis?.kpiEquipamentos?.totalBaixado ?? "-", icon: Archive, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-800", border: "border-gray-400 dark:border-gray-600", status: "BAIXADO" as EquipmentStatus },
-    ...(isAdmin ? [{ label: "Excluidos", value: kpis?.kpiEquipamentos?.totalExcluido ?? "-", icon: Archive, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800", border: "border-slate-500", status: "EXCLUIDO" as EquipmentStatus }] : []),
-    { label: "Inserviveis", value: kpis?.kpiEquipamentos?.totalInservivel ?? "-", icon: AlertTriangle, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/50", border: "border-red-500", status: "INSERVIVEL" as EquipmentStatus },
+    ...(isAdmin ? [{ label: "Excluídos", value: kpis?.kpiEquipamentos?.totalExcluido ?? "-", icon: Archive, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800", border: "border-slate-500", status: "EXCLUIDO" as EquipmentStatus }] : []),
+    { label: "Inservíveis", value: kpis?.kpiEquipamentos?.totalInservivel ?? "-", icon: AlertTriangle, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/50", border: "border-red-500", status: "INSERVIVEL" as EquipmentStatus },
   ];
 
   const EQUIPMENT_TYPES: EquipmentType[] = ["PC", "MONITOR", "TECLADO", "NOTEBOOK", "IMPRESSORA", "ROTEADOR", "SWITCH", "SERVIDOR", "ESTABILIZADOR", "NOBREAK", "ROTULADORA", "ARMAZENAMENTO", "OUTROS"];
@@ -307,7 +307,7 @@ export function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>
-            Inventario de Ativos
+            Inventário de Ativos
           </h3>
           <p className="text-[13px] text-muted-foreground mt-0.5">
             Gerencie todos os PCs da unidade
@@ -337,7 +337,7 @@ export function DashboardPage() {
             <Monitor className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
           </div>
           <p className="text-[12px] sm:text-[13px] text-primary uppercase tracking-wider truncate" style={{ fontWeight: 700 }}>
-            Metricas de PCs
+            Métricas de PCs
           </p>
         </div>
         <p className="text-[11px] text-sky-700 dark:text-sky-300/90 mb-2 sm:mb-3 ml-0 sm:ml-10">
@@ -403,7 +403,7 @@ export function DashboardPage() {
             <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-400" />
           </div>
           <p className="text-[12px] sm:text-[13px] text-slate-600 dark:text-slate-400 uppercase tracking-wider truncate" style={{ fontWeight: 700 }}>
-            Metricas de todos os equipamentos
+            Métricas de todos os equipamentos
           </p>
         </div>
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2 sm:mb-3 ml-0 sm:ml-10">
@@ -465,7 +465,7 @@ export function DashboardPage() {
           <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-[13px] text-muted-foreground uppercase tracking-wider" style={{ fontWeight: 700 }}>
-                Distribuicao de Equipamentos por Setor
+                Distribuição de Equipamentos por Setor
               </h4>
               <div className="flex items-center gap-3">
                 {selectedSector && (
@@ -620,7 +620,7 @@ export function DashboardPage() {
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
                   type="text"
-                  placeholder="Patrimonio, Serial, Descricao, Marca..."
+                  placeholder="Patrimônio, Serial, Descrição, Marca..."
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] transition-all bg-background"
                 />
               </div>
@@ -696,7 +696,7 @@ export function DashboardPage() {
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-border bg-muted">
-                {["Patrimonio", "Serial", "Item / Marca", "Descricao", "Rede", "Setor", "Resp.", "Status", "Acoes"].map((h, i) => (
+                {["Patrimônio", "Serial", "Item / Marca", "Descrição", "Rede", "Setor", "Resp.", "Status", "Ações"].map((h, i) => (
                   <th
                     key={h}
                     className={`px-4 md:px-6 py-3.5 text-[10px] text-muted-foreground uppercase tracking-wider whitespace-nowrap ${i === 3 ? "hidden lg:table-cell" :
@@ -846,7 +846,7 @@ export function DashboardPage() {
         <div className="bg-muted/50 px-4 md:px-6 py-3 border-t border-border flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
             <span>
-              Pagina{" "}
+              Página{" "}
               <span style={{ fontWeight: 600 }} className="text-foreground">{Math.min(currentPage + 1, Math.max(totalPages, 1))}</span>
               {" "}de{" "}
               <span style={{ fontWeight: 600 }} className="text-foreground">{Math.max(totalPages, 1)}</span>

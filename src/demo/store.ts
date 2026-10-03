@@ -7,7 +7,8 @@
  *   - limpeza do responsável em status que não comportam uso
  *   - troca (swap) atômica entre dois equipamentos
  *   - defeito preserva o status anterior e o devolve na resolução
- *   - trilha de auditoria a cada operação
+ *   - trilha de auditoria a cada operação, com busca, filtros e exportação
+ *   - permissões por perfil que o backend impõe (403), além das que a UI esconde
  *
  * Persistido em localStorage para o visitante poder recarregar a página sem
  * perder o que fez.
@@ -32,8 +33,9 @@ import { buildSeed, STORAGE_SECTOR } from './seed';
 /**
  * Versionado: mudar a chave descarta estados antigos incompatíveis.
  * v3 — remoção do perfil DEV e da simulação de modo de manutenção.
+ * v4 — SGPT: trilha de auditoria maior, para a busca e a paginação terem o que mostrar.
  */
-const STORAGE_KEY = 'sgp-demo-state-v3';
+const STORAGE_KEY = 'sgp-demo-state-v4';
 
 export interface DemoState {
   sectors: SectorResponseDTO[];
@@ -117,6 +119,23 @@ function shouldClearUser(status: EquipmentStatus): boolean {
 export function currentUser(): UserResponse | null {
   if (!state.session) return null;
   return state.users.find((u) => u.username === state.session) ?? null;
+}
+
+/**
+ * Espelha os @PreAuthorize do backend: a UI já esconde a ação, mas a regra vale
+ * mesmo que alguém chame a API diretamente.
+ */
+function requireRole(roles: UserResponse['role'][], message = 'Você não tem permissão para esta ação.') {
+  const user = currentUser();
+  if (!user) throw new DemoError(401, 'Não autenticado.');
+  if (!roles.includes(user.role)) throw new DemoError(403, message);
+}
+
+const EDITORS: UserResponse['role'][] = ['ADMIN', 'USER'];
+
+/** Excluir é só de ADMIN — inclusive pelo caminho de gravar o status EXCLUIDO. */
+function requireExclusionPermission(status?: EquipmentStatus) {
+  if (status === 'EXCLUIDO') requireRole(['ADMIN'], 'Somente administradores podem excluir equipamentos.');
 }
 
 function actor(): string {
@@ -247,6 +266,8 @@ export function listEquipments(): EquipmentResponseDTO[] {
 }
 
 export function createEquipment(dto: CreateEquipmentDTO): EquipmentResponseDTO {
+  requireRole(EDITORS);
+  requireExclusionPermission(dto.status);
   const asset = dto.assetNumber?.trim();
   if (asset && asset !== 'TEMP-' && state.equipments.some((e) => e.assetNumber === asset)) {
     throw new DemoError(409, 'Já existe um equipamento com este número de patrimônio.');
@@ -277,6 +298,8 @@ export function createEquipment(dto: CreateEquipmentDTO): EquipmentResponseDTO {
 }
 
 export function updateEquipment(id: string, dto: CreateEquipmentDTO): EquipmentResponseDTO {
+  requireRole(EDITORS);
+  requireExclusionPermission(dto.status);
   const eq = findEquipment(id);
   const asset = dto.assetNumber?.trim();
   if (asset && state.equipments.some((e) => e.id !== id && e.assetNumber === asset)) {
@@ -301,6 +324,7 @@ export function updateEquipment(id: string, dto: CreateEquipmentDTO): EquipmentR
 }
 
 export function deleteEquipment(id: string) {
+  requireRole(['ADMIN'], 'Somente administradores podem excluir equipamentos.');
   const eq = findEquipment(id);
   state.equipments = state.equipments.filter((e) => e.id !== id);
   state.defects = state.defects.filter((d) => d.equipmentId !== id);
@@ -309,6 +333,8 @@ export function deleteEquipment(id: string) {
 }
 
 export function moveEquipment(dto: MoveEquipmentDTO) {
+  requireRole(EDITORS);
+  requireExclusionPermission(dto.targetStatus);
   const eq = findEquipment(dto.equipmentId);
   const target = findSector(dto.targetSectorId);
   const status = dto.targetStatus ?? eq.status;
@@ -328,6 +354,7 @@ export function moveEquipment(dto: MoveEquipmentDTO) {
  *      se não, volta ao setor de origem do novo (DISPONIVEL se for o estoque).
  */
 export function swapEquipment(dto: SwapEquipmentDTO) {
+  requireRole(EDITORS);
   const outgoing = findEquipment(dto.outgoingEquipmentId);
   const incoming = findEquipment(dto.incomingEquipmentId);
   if (outgoing.id === incoming.id) {
@@ -394,6 +421,7 @@ export function listAllDefects(): DefectResponse[] {
 }
 
 export function createDefect(equipmentId: string, description: string): DefectResponse {
+  requireRole(EDITORS);
   const eq = findEquipment(equipmentId);
   const defect: DefectResponse = {
     id: newId(),
@@ -416,6 +444,7 @@ export function createDefect(equipmentId: string, description: string): DefectRe
 }
 
 export function updateDefect(defectId: string, description: string): DefectResponse {
+  requireRole(EDITORS);
   const defect = state.defects.find((d) => d.id === defectId);
   if (!defect) throw new DemoError(404, 'Defeito não encontrado.');
   defect.description = description.trim();
@@ -424,6 +453,7 @@ export function updateDefect(defectId: string, description: string): DefectRespo
 }
 
 export function resolveDefect(defectId: string): DefectResponse {
+  requireRole(EDITORS);
   const defect = state.defects.find((d) => d.id === defectId);
   if (!defect) throw new DemoError(404, 'Defeito não encontrado.');
   defect.status = 'RESOLVIDO';
@@ -602,22 +632,109 @@ export function securityStatus() {
 }
 
 // ─── Auditoria ────────────────────────────────────────────────────────────────
+// Espelha SearchAuditLogsUseCase + AuditLogSpecifications + AuditReportService.
 
-export function listAudit(page: number, size: number, actorUsername?: string, actionType?: string) {
-  const filtered = state.audit
-    .filter((a) => (actorUsername ? a.actorUsername.toLowerCase().includes(actorUsername.toLowerCase()) : true))
-    .filter((a) => (actionType ? a.actionType === actionType : true));
-  const start = page * size;
+export interface AuditCriteria {
+  from?: string;
+  to?: string;
+  actor?: string;
+  actionTypes?: string[];
+  entityType?: string;
+  ip?: string;
+  q?: string;
+  sort?: string;
+  direction?: string;
+}
+
+const AUDIT_SORTABLE = new Set(['createdAt', 'actorUsername', 'actionType', 'entityType', 'ipAddress']);
+export const AUDIT_PDF_MAX_ROWS = 5_000;
+export const AUDIT_CSV_MAX_ROWS = 100_000;
+
+/** Data local AAAA-MM-DD de um ISO (o período do backend é em dias locais). */
+function localDay(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Filtros combinados com E; período inclusivo; ordenação estável (desempate pelo mais recente). */
+export function searchAudit(c: AuditCriteria): AuditLog[] {
+  requireRole(['ADMIN']);
+  if (c.from && c.to && c.from > c.to) {
+    throw new DemoError(400, 'A data inicial não pode ser posterior à data final.');
+  }
+  const sort = c.sort || 'createdAt';
+  if (!AUDIT_SORTABLE.has(sort)) throw new DemoError(400, `Não é possível ordenar por '${sort}'.`);
+  const dir = (c.direction || 'desc').toLowerCase();
+  if (dir !== 'asc' && dir !== 'desc') throw new DemoError(400, 'Direção de ordenação inválida: use asc ou desc.');
+
+  const actorTerm = c.actor?.trim().toLowerCase();
+  const ip = c.ip?.trim();
+  const text = c.q?.trim();
+  const textLower = text?.toLowerCase();
+  const types = c.actionTypes?.filter(Boolean) ?? [];
+
+  const filtered = state.audit.filter((a) => {
+    const day = localDay(a.createdAt);
+    if (c.from && day < c.from) return false;
+    if (c.to && day > c.to) return false;
+    if (actorTerm && !a.actorUsername?.toLowerCase().includes(actorTerm)) return false;
+    if (types.length && !types.includes(a.actionType)) return false;
+    if (c.entityType && a.entityType !== c.entityType.trim()) return false;
+    if (ip && !a.ipAddress?.startsWith(ip)) return false;
+    if (textLower && !(a.description?.toLowerCase().includes(textLower) || a.entityId === text)) return false;
+    return true;
+  });
+
+  const key = sort as keyof AuditLog;
+  const sign = dir === 'asc' ? 1 : -1;
+  return filtered.sort((x, y) => {
+    const primary = String(x[key] ?? '').localeCompare(String(y[key] ?? '')) * sign;
+    if (primary !== 0 || sort === 'createdAt') return primary || y.id.localeCompare(x.id);
+    return y.createdAt.localeCompare(x.createdAt) || y.id.localeCompare(x.id);
+  });
+}
+
+export function listAudit(c: AuditCriteria, page: number, size: number) {
+  if (page < 0) throw new DemoError(400, 'A página não pode ser negativa.');
+  if (size < 1 || size > 100) throw new DemoError(400, 'O tamanho da página deve estar entre 1 e 100.');
+  const all = searchAudit(c);
+  const content = all.slice(page * size, page * size + size);
+  const totalPages = Math.ceil(all.length / size);
   return {
-    content: filtered.slice(start, start + size),
-    totalElements: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / size)),
-    number: page,
-    size,
+    content, page, size,
+    totalElements: all.length,
+    totalPages,
+    first: page === 0,
+    last: page >= totalPages - 1,
+    empty: content.length === 0,
   };
 }
 
-export function recordReportGenerated(kind: string) {
-  audit('REPORT_GENERATED', 'System', '', `Relatório (${kind}) gerado em PDF.`);
+/** Autores e entidades que já aparecem no log — alimentam os seletores da tela. */
+export function auditFilterOptions() {
+  requireRole(['ADMIN']);
+  const distinct = (values: (string | undefined)[]) =>
+    [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b));
+  return {
+    actors: distinct(state.audit.map((a) => a.actorUsername)),
+    entityTypes: distinct(state.audit.map((a) => a.entityType)),
+  };
+}
+
+/** Busca para exportação: mesmos filtros e ordenação, sem paginação, com o limite do formato. */
+export function auditForReport(c: AuditCriteria, format: 'pdf' | 'csv'): AuditLog[] {
+  const all = searchAudit(c);
+  const max = format === 'pdf' ? AUDIT_PDF_MAX_ROWS : AUDIT_CSV_MAX_ROWS;
+  if (all.length > max) {
+    const hint = format === 'pdf' ? ' Refine os filtros ou exporte em CSV.' : ' Refine os filtros.';
+    throw new DemoError(400, `A consulta tem ${all.length.toLocaleString('pt-BR')} eventos; o limite deste formato é ${max.toLocaleString('pt-BR')}.${hint}`);
+  }
+  return all;
+}
+
+/** Mesmas entidades do backend: "Report" (inventário, resumo, auditoria) e "EquipmentSheet" (ficha). */
+export function recordReportGenerated(entityType: 'Report' | 'EquipmentSheet', entityId: string, description: string) {
+  audit('REPORT_GENERATED', entityType, entityId, description);
   persist();
 }

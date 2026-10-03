@@ -48,6 +48,8 @@ function isoDaysAgo(days: number, hour = 9): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
   d.setHours(hour, int(0, 59), int(0, 59), 0);
+  // "Hoje" num horário que ainda não chegou recua para o dia anterior: o seed nunca fica no futuro.
+  if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
   return d.toISOString();
 }
 
@@ -286,7 +288,8 @@ export function buildSeed() {
     'EQUIPMENT_CREATE', 'EQUIPMENT_UPDATE', 'EQUIPMENT_TRANSFER', 'EQUIPMENT_SWAP',
     'LOGIN', 'LOGOUT', 'REPORT_GENERATED', 'USER_CREATE', 'USER_UPDATE',
   ];
-  for (let i = 1; i <= 60; i++) {
+  // Volume suficiente para a busca, a ordenação e a paginação da auditoria fazerem sentido.
+  for (let i = 1; i <= 180; i++) {
     const action = pick(ACTIONS);
     const eq = pick(equipments);
     const actor = pick(['admin.demo', 'usuario.demo', 'chefia.demo', 'carla.duarte']);
@@ -294,11 +297,11 @@ export function buildSeed() {
       id: uid('f', i),
       actorUsername: actor,
       actionType: action,
-      entityType: action.startsWith('USER') ? 'User' : action.startsWith('EQUIPMENT') ? 'Equipment' : 'System',
-      entityId: action.startsWith('EQUIPMENT') ? eq.id : '',
+      entityType: action.startsWith('EQUIPMENT') ? 'Equipment' : action === 'REPORT_GENERATED' ? 'Report' : 'User',
+      entityId: action.startsWith('EQUIPMENT') ? eq.id : action === 'REPORT_GENERATED' ? 'inventory' : '',
       description: describeAction(action, eq.assetNumber, eq.currentSector.acronym),
       ipAddress: `10.20.${int(1, 8)}.${int(10, 250)}`,
-      createdAt: isoDaysAgo(int(0, 60), int(8, 18)),
+      createdAt: isoDaysAgo(int(0, 90), int(8, 18)),
     });
   }
   audit.sort((a, b) => b.createdAt.localeCompare(a.createdAt));

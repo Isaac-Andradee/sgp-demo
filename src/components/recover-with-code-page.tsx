@@ -75,7 +75,7 @@ export function RecoverWithCodePage() {
             <Network className="w-8 h-8 text-sky-300 dark:text-primary" />
           </div>
           <h1 className="text-white dark:text-foreground text-[28px] tracking-tight" style={{ fontWeight: 700 }}>
-            SGP <span className="text-sky-300 dark:text-primary">Demo</span>
+            SGPT <span className="text-sky-300 dark:text-primary">Demo</span>
           </h1>
         </div>
 
@@ -143,7 +143,7 @@ export function RecoverWithCodePage() {
                       <input
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => { setPassword(e.target.value); setShowPassword(false); }}
                         required
                         autoComplete="new-password"
                         className="w-full pl-10 pr-11 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all text-[14px] text-foreground placeholder:text-muted-foreground"
@@ -162,7 +162,7 @@ export function RecoverWithCodePage() {
                       <input
                         type={showPassword ? "text" : "password"}
                         value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
+                        onChange={(e) => { setConfirm(e.target.value); setShowPassword(false); }}
                         required
                         autoComplete="new-password"
                         className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all text-[14px] text-foreground placeholder:text-muted-foreground"

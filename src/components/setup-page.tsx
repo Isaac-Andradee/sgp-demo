@@ -224,9 +224,9 @@ export function SetupPage() {
             <Network className="w-8 h-8 text-sky-300 dark:text-primary" />
           </div>
           <h1 className="text-white dark:text-foreground text-[28px] tracking-tight" style={{ fontWeight: 700 }}>
-            SGP <span className="text-sky-300 dark:text-primary">Demo</span>
+            SGPT <span className="text-sky-300 dark:text-primary">Demo</span>
           </h1>
-          <p className="text-sky-200/60 dark:text-muted-foreground text-[13px] mt-1">Configuracao Inicial do Sistema</p>
+          <p className="text-sky-200/60 dark:text-muted-foreground text-[13px] mt-1">Configuração Inicial do Sistema</p>
         </div>
 
         <div className="bg-card rounded-2xl shadow-2xl overflow-hidden border border-border">

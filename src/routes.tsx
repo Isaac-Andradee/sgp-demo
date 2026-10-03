@@ -32,6 +32,15 @@ function AdminOnly({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Telas de escrita (movimentação): USER e ADMIN — o VIEWER (Consulta) volta para a Visão Geral. */
+function EditorOnly({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard>
+      <RoleGuard requiredRole={["USER", "ADMIN"]}>{children}</RoleGuard>
+    </AuthGuard>
+  );
+}
+
 function Public({ children }: { children: React.ReactNode }) {
   return <PublicGuard>{children}</PublicGuard>;
 }
@@ -60,7 +69,7 @@ export const router = createBrowserRouter([
     Component: AppLayout,
     children: [
       { index: true, element: <Auth><DashboardPage /></Auth> },
-      { path: "movimentacao", element: <Auth><MovimentacaoPage /></Auth> },
+      { path: "movimentacao", element: <EditorOnly><MovimentacaoPage /></EditorOnly> },
       { path: "historico-defeitos", element: <Auth><HistoricoDefeitosPage /></Auth> },
       { path: "setores", element: <Auth><SetoresPage /></Auth> },
       { path: "usuarios",  element: <AdminOnly><UsuariosPage /></AdminOnly>  },

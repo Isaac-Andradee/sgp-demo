@@ -34,15 +34,15 @@ const MAINTENANCE_BANNER = import.meta.env.VITE_MAINTENANCE_BANNER ?? "";
 const MAINTENANCE_DATE_STR = import.meta.env.VITE_MAINTENANCE_DATE ?? "";
 
 const baseNavItems = [
-  { id: "dashboard", label: "Visao Geral",   title: "Visão Geral",    icon: LayoutDashboard, path: "/" },
-  { id: "movimentacao", label: "Movimentacao", title: "Movimentação", icon: ArrowLeftRight,  path: "/movimentacao" },
-  { id: "historico-defeitos", label: "Historico Defeitos", title: "Histórico de Defeitos", icon: History, path: "/historico-defeitos" },
+  { id: "dashboard", label: "Visão Geral",   title: "Visão Geral",    icon: LayoutDashboard, path: "/" },
+  { id: "movimentacao", label: "Movimentação", title: "Movimentação", icon: ArrowLeftRight,  path: "/movimentacao" },
+  { id: "historico-defeitos", label: "Histórico Defeitos", title: "Histórico de Defeitos", icon: History, path: "/historico-defeitos" },
   { id: "setores",  label: "Setores",      title: "Setores",          icon: Building2,       path: "/setores" },
 ];
 
 const adminNavItems = [
-  { id: "usuarios",  label: "Usuarios",  title: "Usuários",  icon: Users,       path: "/usuarios"  },
-  { id: "relatorios", label: "Relatorios", title: "Relatórios", icon: FileText,  path: "/relatorios" },
+  { id: "usuarios",  label: "Usuários",  title: "Usuários",  icon: Users,       path: "/usuarios"  },
+  { id: "relatorios", label: "Relatórios", title: "Relatórios", icon: FileText,  path: "/relatorios" },
   { id: "auditoria", label: "Auditoria", title: "Auditoria", icon: ShieldCheck, path: "/auditoria" },
 ];
 
@@ -70,7 +70,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, canMoveEquipment } = usePermissions();
   const isOnline = useOnlineStatus();
 
   // Aviso de manutenção: o backend (runtime, editável no painel DEV) tem prioridade;
@@ -95,7 +95,11 @@ export function AppLayout() {
   );
   const bannerVisible = !!activeBanner && dismissedMsg !== activeBanner.message;
 
-  const navItems = isAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  // VIEWER (Consulta) não movimenta equipamentos: o item de Movimentação some do menu.
+  const visibleBaseNavItems = canMoveEquipment
+    ? baseNavItems
+    : baseNavItems.filter((item) => item.id !== "movimentacao");
+  const navItems = isAdmin ? [...visibleBaseNavItems, ...adminNavItems] : visibleBaseNavItems;
   const currentNav = navItems.find((item) => item.path === location.pathname) || navItems[0];
   const isPerfilPage = location.pathname === "/perfil";
   const pageLabel = isPerfilPage ? "Meu Perfil" : currentNav.label;
@@ -103,7 +107,7 @@ export function AppLayout() {
 
   // Título da aba
   useEffect(() => {
-    document.title = `${pageTitle} | SGP Demo`;
+    document.title = `${pageTitle} | SGPT Demo`;
   }, [pageTitle]);
 
   // Esc fecha sidebar no mobile
@@ -171,7 +175,7 @@ export function AppLayout() {
               <Network className="w-4 h-4 text-sidebar-primary" />
             </div>
             <div>
-              <span className="text-[15px] tracking-tight" style={{ fontWeight: 600 }}>SGP</span>
+              <span className="text-[15px] tracking-tight" style={{ fontWeight: 600 }}>SGPT</span>
               <span className="text-sidebar-primary text-[11px] ml-1.5" style={{ fontWeight: 500 }}>Demo</span>
             </div>
           </div>
@@ -247,7 +251,7 @@ export function AppLayout() {
                   onClick={() => navigate("/")}
                   className="hover:text-primary transition-colors"
                 >
-                  Inicio
+                  Início
                 </button>
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-primary" style={{ fontWeight: 500 }}>
@@ -316,9 +320,9 @@ export function AppLayout() {
         <footer className="shrink-0 border-t border-border bg-background px-4 md:px-6 py-2.5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-1 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
-              <span style={{ fontWeight: 600 }} className="text-foreground">SGP Demo</span>
+              <span style={{ fontWeight: 600 }} className="text-foreground">SGPT Demo</span>
               <span className="text-muted-foreground/60">·</span>
-              <span>Sistema de Gestão Patrimonial</span>
+              <span>Sistema de Gestão do Parque Tecnológico</span>
               <span className="text-muted-foreground/60">·</span>
               <span>Núcleo de Informática</span>
               <span className="text-muted-foreground/60">·</span>

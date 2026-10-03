@@ -18,7 +18,7 @@ export const reportApi = {
       if (v !== undefined && v !== null && String(v).trim() !== '') cleaned[k] = String(v);
     }
     const res = await api.get('/reports/inventory', { params: cleaned, responseType: 'blob' });
-    return toDownload(res, `inventario-sgp-${new Date().toISOString().slice(0, 10)}.pdf`);
+    return toDownload(res, `inventario-sgpt-${new Date().toISOString().slice(0, 10)}.pdf`);
   },
 
   /** Baixa a Ficha do Equipamento em PDF. */
@@ -30,15 +30,30 @@ export const reportApi = {
   /** Baixa o Resumo Executivo em PDF. */
   summary: async (): Promise<{ blob: Blob; filename: string }> => {
     const res = await api.get('/reports/summary', { responseType: 'blob' });
-    return toDownload(res, `resumo-executivo-sgp-${new Date().toISOString().slice(0, 10)}.pdf`);
+    return toDownload(res, `resumo-executivo-sgpt-${new Date().toISOString().slice(0, 10)}.pdf`);
   },
 };
 
 // Extrai o blob + nome de arquivo (do Content-Disposition, com fallback) de uma resposta.
-function toDownload(res: { data: unknown; headers: Record<string, unknown> }, fallback: string): { blob: Blob; filename: string } {
+export function toDownload(res: { data: unknown; headers: Record<string, unknown> }, fallback: string): { blob: Blob; filename: string } {
   const cd = (res.headers['content-disposition'] as string | undefined) ?? '';
   const match = cd.match(/filename="?([^"]+)"?/);
   return { blob: res.data as Blob, filename: match?.[1] ?? fallback };
+}
+
+/**
+ * Mensagem de erro do backend numa requisição com `responseType: 'blob'`: o JSON
+ * de erro chega como Blob e o texto se perde. Devolve null se não houver mensagem.
+ */
+export async function blobErrorMessage(error: unknown): Promise<string | null> {
+  const data = (error as { response?: { data?: unknown } })?.response?.data;
+  if (!(data instanceof Blob)) return null;
+  try {
+    const body = JSON.parse(await data.text()) as { message?: unknown };
+    return typeof body.message === 'string' && body.message.trim() ? body.message : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Dispara o download de um Blob no navegador. */

@@ -154,7 +154,7 @@ function SectorModal({
             style={{ fontWeight: 600 }}
           >
             {isSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {sector ? "Salvar Alteracoes" : "Criar Setor"}
+            {sector ? "Salvar Alterações" : "Criar Setor"}
           </button>
         </div>
       </div>
@@ -208,7 +208,7 @@ export function SetoresPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>
-            Gestao de Setores
+            Gestão de Setores
           </h3>
           <p className="text-[13px] text-muted-foreground mt-0.5">
             Cadastre e gerencie os setores da unidade
