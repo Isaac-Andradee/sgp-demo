@@ -199,7 +199,7 @@ export function MaintenancePage() {
           </div>
           <div className="text-left">
             <span className="text-white dark:text-foreground text-[22px] tracking-tight" style={{ fontWeight: 700 }}>
-              SGP <span className="text-sky-300 dark:text-primary">Demo</span>
+              SGPT <span className="text-sky-300 dark:text-primary">Demo</span>
             </span>
           </div>
         </div>
@@ -303,7 +303,7 @@ export function MaintenancePage() {
 
         {/* Rodapé da tela de manutenção */}
         <p className="mt-8 text-[12px] text-sky-300/40 dark:text-muted-foreground">
-          SGP — Sistema de Gestão de Patrimônio · Demonstração
+          SGPT — Sistema de Gestão do Parque Tecnológico · Demonstração
         </p>
       </div>
     </div>

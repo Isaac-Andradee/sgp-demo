@@ -118,7 +118,9 @@ export function usePermissions() {
     canManageUsers:     isAdmin,
     canCreateEquipment: role !== 'VIEWER',
     canEditEquipment:   isAdmin || role === 'USER',
-    canDeleteEquipment: isAdmin,
+    canMoveEquipment:   isAdmin || role === 'USER', // transferência e substituição
+    canManageDefects:   isAdmin || role === 'USER', // registrar, editar e resolver defeitos
+    canDeleteEquipment: isAdmin, // inclui marcar como EXCLUIDO (backend recusa para USER)
     canManageSectors:   isAdmin, // somente ADMIN e DEV podem criar/editar/excluir setores
     canViewAudit:       isAdmin,
     canControlSystem:   isDev, // somente DEV pode gerenciar manutenção e configs do sistema

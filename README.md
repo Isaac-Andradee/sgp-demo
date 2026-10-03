@@ -1,7 +1,7 @@
-# SGP — Sistema de Gestão de Patrimônio · Demonstração
+# SGPT — Sistema de Gestão do Parque Tecnológico · Demonstração
 
-> **Versão de portfólio.** Réplica navegável da interface de um sistema de gestão de patrimônio de
-> TI em produção numa administração pública desde julho de 2026. **Todos os dados são fictícios** e
+> **Versão de portfólio.** Réplica navegável da interface de um sistema de gestão do parque
+> tecnológico (equipamentos de TI) em produção numa administração pública desde julho de 2026. **Todos os dados são fictícios** e
 > **não há backend** — a API é simulada no próprio navegador.
 
 **▶ Demonstração ao vivo:** [Demonstração](https://sgp-demo-delta.vercel.app/login)
@@ -15,7 +15,7 @@ Planilha guarda dado, mas não garante as três coisas que o controle patrimonia
 
 | Limitação da planilha | Consequência | Como o sistema resolve |
 |---|---|---|
-| Não registra **quem** alterou nem **quando** | Impossível auditar | Trilha de auditoria com autor, ação, data e IP |
+| Não registra **quem** alterou nem **quando** | Impossível auditar | Trilha de auditoria com autor, ação, data e IP, pesquisável e exportável |
 | Duas pessoas editando **se sobrescrevem** | Trabalho perdido em silêncio | Banco transacional + *optimistic locking* |
 | **Não valida** a entrada | Patrimônio duplicado, dado inconsistente | Validação na aplicação + restrições no banco |
 | Consulta e relatório **manuais** | Horas para levantar informação | Filtros, dashboard e relatórios em PDF |
@@ -29,8 +29,8 @@ parte do sistema que menos aparece em captura de tela.
 
 | Perfil | O que enxerga |
 |---|---|
-| **Consulta** (`VIEWER`) | Somente leitura — os botões de escrita desaparecem |
-| **Operador** (`USER`) | Cadastra, movimenta e troca equipamentos |
+| **Consulta** (`VIEWER`) | Somente leitura — os botões de escrita e o menu Movimentação desaparecem |
+| **Operador** (`USER`) | Cadastra, movimenta e troca equipamentos e registra defeitos — mas não exclui |
 | **Administrador** (`ADMIN`) | Tudo, mais usuários, setores, relatórios e auditoria |
 
 A faixa amarela do topo permite **trocar de perfil a qualquer momento** e **resetar os dados**.
@@ -42,9 +42,12 @@ A faixa amarela do topo permite **trocar de perfil a qualquer momento** e **rese
 ### Roteiro sugerido (3 minutos)
 
 1. **Dashboard** — totais por situação e distribuição por setor.
-2. **Movimentação → Trocar equipamento** — a operação central do sistema (ver abaixo).
+2. **Movimentação → Trocar equipamento** — a operação central do sistema (ver abaixo). Antes de
+   gravar, um modal de confirmação resume o que vai acontecer com cada equipamento.
 3. **Auditoria** — o registro da troca que você acabou de fazer, com autor, horário e IP.
-   *É exatamente o que a planilha não fazia.*
+   *É exatamente o que a planilha não fazia.* Combine os filtros (período, usuário, evento,
+   entidade, IP, texto), ordene pelas colunas, copie o link — ele guarda a consulta — e exporte
+   o resultado filtrado em **PDF** ou **CSV**.
 4. **Relatórios** — gera um PDF de verdade, montado no navegador.
 5. **Troque para o perfil Consulta** pela faixa do topo e repare no que some da interface.
 
@@ -83,7 +86,13 @@ Ao cadastrar sem informar o status, o sistema o deduz:
   estava, em vez de um valor arbitrário.
 - **Patrimônio único** — cadastro duplicado é bloqueado com mensagem clara.
 - **Login padronizado** `nome.sobrenome`, com sufixo numérico em caso de colisão.
-- **Auditoria** — toda operação relevante gera registro imutável.
+- **Auditoria** — toda operação relevante gera registro imutável. A busca é feita no servidor
+  (aqui, no backend simulado): filtros combinados com E, período inclusivo, ordenação estável e
+  paginação; a exportação usa exatamente a mesma consulta, com limite por formato (PDF 5.000,
+  CSV 100.000 eventos) e o próprio relatório gerado entra na trilha.
+- **Permissões impostas no backend** — além de a interface esconder a ação, o backend simulado
+  responde `403` como o real: só `ADMIN` exclui equipamento (inclusive gravando o status
+  `EXCLUIDO`), e o `VIEWER` não movimenta nem registra defeito.
 
 ---
 
@@ -136,9 +145,9 @@ Detalhes que fazem a demo se comportar como o sistema real:
 | Gráficos | Recharts |
 
 **O sistema real** roda em Spring Boot 4 · Java 21 · PostgreSQL 16, com JWT em cookie `httpOnly`,
-Argon2, Flyway, **1.068 testes automatizados** (531 no backend, 537 no frontend) com gate de
-cobertura no CI — 95,3% de linhas no backend e 94,7% no frontend —, CI/CD via GitHub Actions e
-GHCR, e backup diário automatizado.
+Argon2, Flyway, **1.168 testes automatizados** (566 no backend, 602 no frontend) com gate de
+cobertura no CI (90% de linhas no backend), CI/CD via GitHub Actions e GHCR, e backup diário
+automatizado.
 
 > Esta demonstração **não tem testes**: ela é uma vitrine estática do sistema, com backend
 > simulado no navegador (ver [Como a demo funciona sem backend](#como-a-demo-funciona-sem-backend)).

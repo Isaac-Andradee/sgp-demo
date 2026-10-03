@@ -337,6 +337,7 @@ function UserModal({
                     onChange={(e) => {
                       const v = e.target.value;
                       setForm((f) => ({ ...f, password: v }));
+                      setShowPassword(false); // voltou a digitar: esconde de novo
                       setFieldError("password", validatePassword(v, isCreate));
                       setFieldError("passwordConfirm", validatePasswordConfirm(v, form.passwordConfirm, isCreate));
                     }}
@@ -366,6 +367,7 @@ function UserModal({
                     onChange={(e) => {
                       const v = e.target.value;
                       setForm((f) => ({ ...f, passwordConfirm: v }));
+                      setShowPasswordConfirm(false); // voltou a digitar: esconde de novo
                       setFieldError("passwordConfirm", validatePasswordConfirm(form.password, v, isCreate));
                     }}
                     placeholder="Repita a nova senha (opcional)"
@@ -577,8 +579,8 @@ export function UsuariosPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>Gestao de Usuarios</h3>
-          <p className="text-[13px] text-muted-foreground mt-0.5">Gerencie os usuarios do sistema</p>
+          <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>Gestão de Usuários</h3>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Gerencie os usuários do sistema</p>
         </div>
         <button
           onClick={() => { setEditingUser(null); setModalOpen(true); }}
@@ -586,7 +588,7 @@ export function UsuariosPage() {
           style={{ fontWeight: 600 }}
         >
           <Plus className="w-4 h-4" />
-          Novo Usuario
+          Novo Usuário
         </button>
       </div>
 
@@ -613,7 +615,7 @@ export function UsuariosPage() {
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-border bg-muted">
-                {["Nome", "Usuario", "Email", "Perfil", "Status", "Acoes"].map((h, i) => (
+                {["Nome", "Usuário", "Email", "Perfil", "Status", "Ações"].map((h, i) => (
                   <th key={h} className={`px-4 md:px-6 py-3.5 text-[10px] text-muted-foreground uppercase tracking-wider ${i === 5 ? "text-right" : ""}`} style={{ fontWeight: 700 }}>
                     {h}
                   </th>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router";
 import {
   Truck,
@@ -21,6 +21,7 @@ import {
   getEquipmentDropdownSecondary,
 } from "../types";
 import { toast } from "sonner";
+import { ConfirmDialog } from "./confirm-dialog";
 
 type Tab = "transfer" | "swap";
 
@@ -39,7 +40,8 @@ function validateTargetUser(value: string): string | null {
 }
 
 function toTitleCase(s: string): string {
-  return s.trim().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+  // `\b` não reconhece letras acentuadas ("joão" viraria "JoÃO"); por isso o início de palavra é explícito.
+  return s.trim().replace(/(^|[\s\-'])(\p{L})/gu, (_, sep: string, c: string) => sep + c.toUpperCase());
 }
 
 function useEquipmentSearch(query: string, excludeId?: string) {
@@ -158,6 +160,20 @@ function SelectedItemCard({
   );
 }
 
+/** Linha do resumo exibido no modal de confirmação. */
+function SummaryRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2 border-b border-border last:border-0">
+      <span className="text-[11px] text-muted-foreground uppercase tracking-wider shrink-0 pt-0.5" style={{ fontWeight: 700 }}>
+        {label}
+      </span>
+      <span className="text-[13px] text-foreground text-right min-w-0 break-words" style={{ fontWeight: 500 }}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
 export function MovimentacaoPage() {
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -191,6 +207,10 @@ export function MovimentacaoPage() {
   const [swapOutDropdownOpen, setSwapOutDropdownOpen] = useState(false);
   const [swapInDropdownOpen, setSwapInDropdownOpen] = useState(false);
 
+  // Modais de confirmação
+  const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
+  const [swapConfirmOpen, setSwapConfirmOpen] = useState(false);
+
   const { data: sectors } = useQuery({
     queryKey: ["sectors"],
     queryFn: sectorApi.list,
@@ -205,6 +225,7 @@ export function MovimentacaoPage() {
     mutationFn: equipmentApi.move,
     onSuccess: () => {
       toast.success("Transferência realizada com sucesso!");
+      setMoveConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["equipments-paged"] });
       queryClient.invalidateQueries({ queryKey: ["kpis"] });
       queryClient.invalidateQueries({ queryKey: ["sector-stats"] });
@@ -216,6 +237,7 @@ export function MovimentacaoPage() {
       setMoveDestUserError(null);
     },
     onError: (err: unknown) => {
+      setMoveConfirmOpen(false);
       const axErr = err as { response?: { data?: { message?: string } } };
       const msg = axErr?.response?.data?.message ?? "";
       if (msg && (msg.includes("Nome deve conter") || msg.includes("letras, espaços"))) {
@@ -232,6 +254,7 @@ export function MovimentacaoPage() {
     mutationFn: equipmentApi.swap,
     onSuccess: (_, variables) => {
       toast.success("Substituição realizada com sucesso!");
+      setSwapConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["equipments-paged"] });
       queryClient.invalidateQueries({ queryKey: ["kpis"] });
       queryClient.invalidateQueries({ queryKey: ["sector-stats"] });
@@ -246,11 +269,18 @@ export function MovimentacaoPage() {
       setSwapDefectDescription("");
     },
     onError: (err: unknown) => {
+      setSwapConfirmOpen(false);
       const axErr = err as { response?: { data?: { message?: string } } };
       toast.error(axErr?.response?.data?.message ?? "Erro ao realizar substituição.");
     },
   });
 
+  const moveTargetUser = shouldShowUserField(moveDestStatus) && moveDestUser.trim()
+    ? toTitleCase(moveDestUser)
+    : undefined;
+  const moveDestSector = sectors?.find((s) => s.id === moveDestSectorId);
+
+  /** Valida o formulário e abre o modal de confirmação; o envio só acontece ao confirmar. */
   const handleMoveConfirm = () => {
     if (!moveSelected || !moveDestSectorId) return;
     if (shouldShowUserField(moveDestStatus) && moveDestUser.trim()) {
@@ -262,18 +292,25 @@ export function MovimentacaoPage() {
       }
       setMoveDestUserError(null);
     }
-    const targetUserValue = shouldShowUserField(moveDestStatus) && moveDestUser.trim()
-      ? toTitleCase(moveDestUser)
-      : undefined;
+    setMoveConfirmOpen(true);
+  };
+
+  const executeMove = () => {
+    if (!moveSelected || !moveDestSectorId) return;
     moveMutation.mutate({
       equipmentId: moveSelected.id,
       targetSectorId: moveDestSectorId,
       targetStatus: moveDestStatus,
-      targetUser: targetUserValue,
+      targetUser: moveTargetUser,
     });
   };
 
   const handleSwapConfirm = () => {
+    if (!swapOutSelected || !swapInSelected) return;
+    setSwapConfirmOpen(true);
+  };
+
+  const executeSwap = () => {
     if (!swapOutSelected || !swapInSelected) return;
     swapMutation.mutate({
       outgoingEquipmentId: swapOutSelected.id,
@@ -298,7 +335,7 @@ export function MovimentacaoPage() {
             style={{ fontWeight: activeTab === "transfer" ? 600 : 500 }}
           >
             <Truck className="w-4 h-4" />
-            Transferencia
+            Transferência
           </button>
           <button
             onClick={() => setActiveTab("swap")}
@@ -308,7 +345,7 @@ export function MovimentacaoPage() {
             style={{ fontWeight: activeTab === "swap" ? 600 : 500 }}
           >
             <RefreshCw className="w-4 h-4" />
-            Substituicao
+            Substituição
           </button>
         </div>
 
@@ -318,7 +355,7 @@ export function MovimentacaoPage() {
             <div className="flex items-start gap-3 bg-sky-50 dark:bg-sky-950/40 border-b border-sky-100 dark:border-sky-800 p-4">
               <Info className="w-4 h-4 text-sky-600 mt-0.5 flex-shrink-0" />
               <p className="text-[13px] text-sky-700 dark:text-sky-300">
-                Use para alocar um item disponivel ou mudar um item de setor.
+                Use para alocar um item disponível ou mudar um item de setor.
               </p>
             </div>
 
@@ -336,7 +373,7 @@ export function MovimentacaoPage() {
                     onFocus={() => setMoveDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setMoveDropdownOpen(false), 200)}
                     type="text"
-                    placeholder="Busque por patrimonio, serial, marca..."
+                    placeholder="Busque por patrimônio, serial, marca..."
                     className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] transition-all"
                   />
                   <SearchDropdown
@@ -398,7 +435,7 @@ export function MovimentacaoPage() {
               {shouldShowUserField(moveDestStatus) && (
                 <div>
                   <label className="block text-[11px] text-muted-foreground uppercase tracking-wider mb-2" style={{ fontWeight: 700 }}>
-                    Novo Responsavel
+                    Novo Responsável
                   </label>
                   <input
                     value={moveDestUser}
@@ -435,7 +472,7 @@ export function MovimentacaoPage() {
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      Confirmar Transferencia
+                      Confirmar Transferência
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -506,7 +543,7 @@ export function MovimentacaoPage() {
                           Possui defeito?
                         </span>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Se sim, o item vai para MANUTENCAO no setor de estoque (TIC).
+                          Se sim, o item vai para Manutenção no setor de estoque (TIC).
                         </p>
                       </div>
                     </label>
@@ -583,7 +620,7 @@ export function MovimentacaoPage() {
                   ) : (
                     <>
                       <RefreshCw className="w-4 h-4" />
-                      Executar Substituicao
+                      Executar Substituição
                     </>
                   )}
                 </button>
@@ -592,6 +629,65 @@ export function MovimentacaoPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={moveConfirmOpen && !!moveSelected}
+        variant="info"
+        icon={<Truck className="w-4 h-4" />}
+        title="Confirmar transferência"
+        message="Revise os dados abaixo antes de concluir a transferência."
+        confirmLabel="Sim, transferir"
+        loading={moveMutation.isPending}
+        onConfirm={executeMove}
+        onCancel={() => { if (!moveMutation.isPending) setMoveConfirmOpen(false); }}
+      >
+        {moveSelected && (
+          <div className="bg-muted/60 border border-border rounded-xl px-4 py-1">
+            <SummaryRow label="Equipamento">{getEquipmentShortLabel(moveSelected)}</SummaryRow>
+            <SummaryRow label="Setor">
+              {moveSelected.currentSector.acronym} → {moveDestSector?.acronym ?? "—"}
+            </SummaryRow>
+            <SummaryRow label="Status">{EQUIPMENT_STATUS_LABELS[moveDestStatus]}</SummaryRow>
+            {shouldShowUserField(moveDestStatus) && (
+              <SummaryRow label="Responsável">{moveTargetUser ?? "—"}</SummaryRow>
+            )}
+          </div>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={swapConfirmOpen && !!swapOutSelected && !!swapInSelected}
+        variant="warning"
+        icon={<RefreshCw className="w-4 h-4" />}
+        title="Confirmar substituição"
+        message="O item que entra assume o lugar do que sai. Revise antes de concluir."
+        confirmLabel="Sim, substituir"
+        loading={swapMutation.isPending}
+        onConfirm={executeSwap}
+        onCancel={() => { if (!swapMutation.isPending) setSwapConfirmOpen(false); }}
+      >
+        {swapOutSelected && swapInSelected && (
+          <div className="bg-muted/60 border border-border rounded-xl px-4 py-1">
+            <SummaryRow label="Saindo">
+              <span className="text-rose-600 dark:text-rose-400">{getEquipmentShortLabel(swapOutSelected)}</span>
+              <span className="block text-[11px] text-muted-foreground">
+                {swapDefective
+                  ? "Vai para Manutenção no setor de estoque (TIC)"
+                  : `${swapOutSelected.currentSector.acronym} → ${swapInSelected.currentSector.acronym}`}
+              </span>
+            </SummaryRow>
+            <SummaryRow label="Entrando">
+              <span className="text-emerald-600 dark:text-emerald-400">{getEquipmentShortLabel(swapInSelected)}</span>
+              <span className="block text-[11px] text-muted-foreground">
+                {swapInSelected.currentSector.acronym} → {swapOutSelected.currentSector.acronym}
+              </span>
+            </SummaryRow>
+            {swapDefective && (
+              <SummaryRow label="Defeito">{swapDefectDescription.trim() || "Sem descrição"}</SummaryRow>
+            )}
+          </div>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

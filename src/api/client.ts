@@ -12,7 +12,7 @@ export const api = axios.create({
 /**
  * MODO DEMONSTRAÇÃO
  *
- * Este repositório é a versão de portfólio do SGP: não há backend. Trocar o
+ * Este repositório é a versão de portfólio do SGPT: não há backend. Trocar o
  * adapter do axios faz com que toda chamada seja resolvida em memória, sem
  * tocar a rede. Nenhum módulo de API, componente ou hook precisou mudar —
  * a camada de API já concentrava todas as requisições em uma instância só.

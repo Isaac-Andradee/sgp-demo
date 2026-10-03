@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
+import { AlertTriangle, Info, Trash2, X } from "lucide-react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -9,7 +9,11 @@ interface ConfirmDialogProps {
   requirePhrase?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "danger" | "warning";
+  variant?: "danger" | "warning" | "info";
+  /** Substitui o ícone padrão da variante. */
+  icon?: ReactNode;
+  /** Conteúdo extra (ex.: resumo da operação) exibido acima dos botões. */
+  children?: ReactNode;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -23,6 +27,8 @@ export function ConfirmDialog({
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
   variant = "danger",
+  icon,
+  children,
   loading = false,
   onConfirm,
   onCancel,
@@ -51,10 +57,12 @@ export function ConfirmDialog({
 
   if (!open) return null;
 
-  const colors =
-    variant === "danger"
-      ? { icon: "text-rose-600 dark:text-rose-400", iconBg: "bg-rose-100 dark:bg-rose-950/60", btn: "bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 shadow-rose-600/20", border: "border-rose-200 dark:border-rose-800" }
-      : { icon: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-950/60", btn: "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 shadow-amber-600/20", border: "border-amber-200 dark:border-amber-800" };
+  const colors = {
+    danger: { icon: "text-rose-600 dark:text-rose-400", iconBg: "bg-rose-100 dark:bg-rose-950/60", btn: "bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 shadow-rose-600/20", border: "border-rose-200 dark:border-rose-800" },
+    warning: { icon: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-950/60", btn: "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 shadow-amber-600/20", border: "border-amber-200 dark:border-amber-800" },
+    info: { icon: "text-sky-600 dark:text-sky-400", iconBg: "bg-sky-100 dark:bg-sky-950/60", btn: "bg-primary hover:bg-[#075985] dark:hover:bg-sky-600 shadow-sky-600/20", border: "border-sky-200 dark:border-sky-800" },
+  }[variant];
+  const DefaultIcon = variant === "danger" ? Trash2 : variant === "warning" ? AlertTriangle : Info;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -66,6 +74,9 @@ export function ConfirmDialog({
 
       {/* Dialog */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className="relative w-full max-w-[420px] bg-card rounded-2xl shadow-2xl overflow-hidden border border-border"
         style={{ fontFamily: "'Inter', sans-serif" }}
       >
@@ -73,11 +84,9 @@ export function ConfirmDialog({
         <div className={`p-5 border-b ${colors.border} bg-muted/80`}>
           <div className="flex items-start gap-3">
             <div className={`w-9 h-9 rounded-xl ${colors.iconBg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-              {variant === "danger" ? (
-                <Trash2 className={`w-4 h-4 ${colors.icon}`} />
-              ) : (
-                <AlertTriangle className={`w-4 h-4 ${colors.icon}`} />
-              )}
+              <span className={colors.icon}>
+                {icon ?? <DefaultIcon className="w-4 h-4" />}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>
@@ -96,6 +105,8 @@ export function ConfirmDialog({
 
         {/* Corpo */}
         <div className="p-5 space-y-4">
+          {children}
+
           {requirePhrase && (
             <div>
               <label className="block text-[12px] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>

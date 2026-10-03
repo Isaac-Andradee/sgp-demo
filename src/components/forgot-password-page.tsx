@@ -53,7 +53,7 @@ export function ForgotPasswordPage() {
             <Network className="w-8 h-8 text-sky-300 dark:text-primary" />
           </div>
           <h1 className="text-white dark:text-foreground text-[28px] tracking-tight" style={{ fontWeight: 700 }}>
-            SGP <span className="text-sky-300 dark:text-primary">Demo</span>
+            SGPT <span className="text-sky-300 dark:text-primary">Demo</span>
           </h1>
         </div>
 
@@ -82,7 +82,7 @@ export function ForgotPasswordPage() {
                   Esqueceu a senha?
                 </h3>
                 <p className="text-[13px] text-muted-foreground mb-6 text-center">
-                  Informe seu email para receber o link de redefinicao.
+                  Informe seu email para receber o link de redefinição.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,7 +115,7 @@ export function ForgotPasswordPage() {
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 dark:border-primary-foreground/30 border-t-white dark:border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
-                      "Enviar link de redefinicao"
+                      "Enviar link de redefinição"
                     )}
                   </button>
                 </form>

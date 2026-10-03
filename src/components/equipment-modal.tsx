@@ -11,6 +11,7 @@ import {
   isEquipmentWithoutAsset,
 } from "../types";
 import { toast } from "sonner";
+import { usePermissions } from "../contexts/AuthContext";
 
 interface Props {
   open: boolean;
@@ -118,6 +119,9 @@ function toTitleCase(s: string): string {
 }
 
 export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: Props) {
+  const { canDeleteEquipment } = usePermissions();
+  // "Excluído" equivale a excluir: só ADMIN/DEV podem escolher (o backend recusa para USER).
+  const statusOptions = EQUIPMENT_STATUSES.filter((s) => s !== "EXCLUIDO" || canDeleteEquipment);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [noAsset, setNoAsset] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -382,7 +386,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
                 Item sem etiqueta patrimonial?
               </span>
               <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                Voce pode definir o status do equipamento abaixo.
+                Você pode definir o status do equipamento abaixo.
               </p>
             </div>
           </label>
@@ -392,12 +396,12 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
             <div>
               <label className="block text-[11px] text-muted-foreground mb-1.5" style={{ fontWeight: 600 }}>
                 <Tag className="w-3 h-3 inline mr-1" />
-                Patrimonio <span className="text-red-500">*</span>
+                Patrimônio <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 inputMode="numeric"
-                value={noAsset ? "Sem Patrimonio" : assetInputValue}
+                value={noAsset ? "Sem Patrimônio" : assetInputValue}
                 onChange={(e) => {
                   if (noAsset) return;
                   const digits = e.target.value.replace(/\D/g, "").slice(0, 7);
@@ -405,7 +409,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
                   handleChange("assetNumber", digits);
                 }}
                 disabled={noAsset}
-                placeholder={noAsset ? "Sem Patrimonio" : "Digite 7 dígitos (ex: 1234567)"}
+                placeholder={noAsset ? "Sem Patrimônio" : "Digite 7 dígitos (ex: 1234567)"}
                 className={`w-full px-3 py-2.5 border rounded-lg focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] bg-background transition-all disabled:bg-muted disabled:text-muted-foreground ${errors.assetNumber ? "border-red-400" : "border-border"
                   }`}
               />
@@ -428,7 +432,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
                   const sanitized = e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 50);
                   handleChange("serialNumber", sanitized);
                 }}
-                placeholder="Apenas letras e numeros (max. 50)"
+                placeholder="Apenas letras e números (máx. 50)"
                 className="w-full px-3 py-2.5 border border-border rounded-lg focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] bg-background transition-all"
               />
             </div>
@@ -470,13 +474,13 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
           {/* Descrição */}
           <div>
             <label className="block text-[11px] text-muted-foreground mb-1.5" style={{ fontWeight: 600 }}>
-              Descricao Detalhada
+              Descrição Detalhada
             </label>
             <textarea
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
               rows={3}
-              placeholder="Especificacoes do equipamento..."
+              placeholder="Especificações do equipamento..."
               className="w-full px-3 py-2.5 border border-border rounded-lg focus:border-sky-400 focus:ring-2 focus:ring-sky-500/10 outline-none text-[13px] bg-background resize-none transition-all"
             />
           </div>
@@ -563,7 +567,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
               className={`w-full px-3 py-2.5 border rounded-lg focus:border-sky-400 text-[13px] outline-none bg-background ${errors.status ? "border-red-400" : "border-border"}`}
             >
               <option value="">Selecione o status</option>
-              {[...EQUIPMENT_STATUSES]
+              {[...statusOptions]
                 .sort((a, b) => EQUIPMENT_STATUS_LABELS[a].localeCompare(EQUIPMENT_STATUS_LABELS[b]))
                 .map((s) => (
                   <option key={s} value={s}>{EQUIPMENT_STATUS_LABELS[s]}</option>
@@ -576,7 +580,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
           {showUser && (
             <div>
               <label className="block text-[11px] text-muted-foreground mb-1.5" style={{ fontWeight: 600 }}>
-                Responsavel
+                Responsável
               </label>
               <input
                 value={form.equipmentUser}
@@ -609,7 +613,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
             <div className="bg-sky-50 dark:bg-sky-950/40 p-4 rounded-xl border border-sky-100 dark:border-sky-800">
               <p className="text-[11px] text-sky-700 dark:text-sky-300 uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ fontWeight: 700 }}>
                 <Wifi className="w-3.5 h-3.5" />
-                Informacoes de Rede (Opcional)
+                Informações de Rede (Opcional)
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -696,7 +700,7 @@ export function EquipmentModal({ open, onClose, onSaved, equipment, sectors }: P
             style={{ fontWeight: 600 }}
           >
             {isSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {isEditing ? "Salvar Alteracoes" : "Cadastrar"}
+            {isEditing ? "Salvar Alterações" : "Cadastrar"}
           </button>
         </div>
       </div>
