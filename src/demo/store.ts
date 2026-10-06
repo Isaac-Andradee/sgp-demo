@@ -34,13 +34,19 @@ import { buildSeed, STORAGE_SECTOR } from './seed';
  * Versionado: mudar a chave descarta estados antigos incompatíveis.
  * v3 — remoção do perfil DEV e da simulação de modo de manutenção.
  * v4 — SGPT: trilha de auditoria maior, para a busca e a paginação terem o que mostrar.
+ * v5 — status anterior dos defeitos persistido e histórico com defeitos resolvidos no mês corrente.
  */
-const STORAGE_KEY = 'sgp-demo-state-v4';
+const STORAGE_KEY = 'sgp-demo-state-v5';
 
 export interface DemoState {
   sectors: SectorResponseDTO[];
   equipments: EquipmentResponseDTO[];
   defects: DefectResponse[];
+  /**
+   * Status do equipamento antes do defeito, por id do defeito — fica fora do DTO público, como a
+   * coluna previous_status do backend. Persistido junto do estado para sobreviver ao recarregamento.
+   */
+  defectPreviousStatus: Record<string, EquipmentStatus>;
   users: UserResponse[];
   audit: AuditLog[];
   /** username da sessão ativa, ou null. */
@@ -373,18 +379,9 @@ export function swapEquipment(dto: SwapEquipmentDTO) {
   if (dto.isDefective) {
     const storage = state.sectors.find((s) => s.acronym.toUpperCase() === STORAGE_SECTOR) ?? outgoing.currentSector;
     outgoing.currentSector = { ...storage };
-    outgoing.status = 'MANUTENCAO';
     outgoing.equipmentUser = undefined;
-    state.defects.unshift({
-      id: newId(),
-      equipmentId: outgoing.id,
-      description: dto.defectDescription?.trim() || 'Defeito relatado durante substituição em campo.',
-      reportedAt: nowIso(),
-      reportedBy: actor(),
-      resolvedAt: null,
-      status: 'ABERTO',
-    });
-    outgoing.hasOpenDefect = true;
+    // Saiu do setor e foi para o almoxarifado: consertado, volta como DISPONIVEL — não EM_USO sem dono.
+    openDefect(outgoing, dto.defectDescription?.trim() || 'Defeito relatado durante substituição em campo.', 'DISPONIVEL');
   } else {
     const backToStorage = originSector.acronym.toUpperCase() === STORAGE_SECTOR;
     outgoing.currentSector = originSector;
@@ -399,75 +396,107 @@ export function swapEquipment(dto: SwapEquipmentDTO) {
 
 // ─── Defeitos ─────────────────────────────────────────────────────────────────
 
-/** previousStatus fica fora do DTO público, como no backend (coluna interna). */
-const previousStatusByDefect = new Map<string, EquipmentStatus>();
-
+/**
+ * Filtros de GET /equipments/{id}/defects, iguais aos do backend: com ano e/ou mês, a busca é pelo
+ * mês de **resolução** (a tela de histórico lista o que foi resolvido em cada período); só o mês,
+ * sem ano, considera o ano corrente.
+ */
 export function listDefects(equipmentId: string, filters: { status?: string; year?: number; month?: number }): DefectResponse[] {
-  return state.defects
+  const byEquipment = state.defects
     .filter((d) => d.equipmentId === equipmentId)
     .filter((d) => (filters.status ? d.status === filters.status : true))
-    .filter((d) => {
-      if (!filters.year) return true;
-      const dt = new Date(d.reportedAt);
-      if (dt.getFullYear() !== Number(filters.year)) return false;
-      if (filters.month && dt.getMonth() + 1 !== Number(filters.month)) return false;
-      return true;
-    })
     .sort((a, b) => b.reportedAt.localeCompare(a.reportedAt));
+  if (!filters.year && !filters.month) return byEquipment;
+
+  const year = filters.year ?? new Date().getFullYear();
+  const start = filters.month ? new Date(year, filters.month - 1, 1) : new Date(year, 0, 1);
+  const end = filters.month ? new Date(year, filters.month, 1) : new Date(year + 1, 0, 1);
+  return byEquipment.filter((d) => {
+    if (!d.resolvedAt) return false;
+    const resolved = new Date(d.resolvedAt);
+    return resolved >= start && resolved < end;
+  });
 }
 
 export function listAllDefects(): DefectResponse[] {
   return [...state.defects].sort((a, b) => b.reportedAt.localeCompare(a.reportedAt));
 }
 
-export function createDefect(equipmentId: string, description: string): DefectResponse {
-  requireRole(EDITORS);
-  const eq = findEquipment(equipmentId);
+function openDefectsOf(equipmentId: string): DefectResponse[] {
+  return state.defects.filter((d) => d.equipmentId === equipmentId && d.status === 'ABERTO');
+}
+
+/**
+ * Abre um defeito e põe o equipamento em MANUTENCAO, guardando o status para onde ele volta.
+ * Com outro defeito já aberto, herda o status guardado por ele: assim, qualquer que seja a ordem
+ * de resolução, o último defeito resolvido devolve o equipamento ao estado de antes do primeiro.
+ */
+function openDefect(eq: EquipmentResponseDTO, description: string, returnStatus: EquipmentStatus = eq.status): DefectResponse {
+  const alreadyOpen = openDefectsOf(eq.id)[0];
+  const previous = alreadyOpen ? state.defectPreviousStatus[alreadyOpen.id] : returnStatus;
+
   const defect: DefectResponse = {
     id: newId(),
-    equipmentId,
-    description: description.trim(),
+    equipmentId: eq.id,
+    description,
     reportedAt: nowIso(),
     reportedBy: actor(),
     resolvedAt: null,
     status: 'ABERTO',
   };
-  // Guarda o status anterior para devolvê-lo na resolução (migration V15 do backend).
-  previousStatusByDefect.set(defect.id, eq.status);
   state.defects.unshift(defect);
+  if (previous && previous !== 'MANUTENCAO') state.defectPreviousStatus[defect.id] = previous;
   eq.status = 'MANUTENCAO';
   eq.equipmentUser = undefined;
   eq.hasOpenDefect = true;
-  audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito registrado para o equipamento ${eq.assetNumber}.`);
+  return defect;
+}
+
+export function createDefect(equipmentId: string, description: string): DefectResponse {
+  requireRole(EDITORS);
+  const eq = findEquipment(equipmentId);
+  const defect = openDefect(eq, description.trim() || 'Defeito registrado');
+  audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito registrado: ${defect.description}`);
   persist();
   return defect;
 }
 
-export function updateDefect(defectId: string, description: string): DefectResponse {
-  requireRole(EDITORS);
-  const defect = state.defects.find((d) => d.id === defectId);
+function findDefect(equipmentId: string, defectId: string): DefectResponse {
+  const defect = state.defects.find((d) => d.id === defectId && d.equipmentId === equipmentId);
   if (!defect) throw new DemoError(404, 'Defeito não encontrado.');
-  defect.description = description.trim();
+  return defect;
+}
+
+export function updateDefect(equipmentId: string, defectId: string, description: string): DefectResponse {
+  requireRole(EDITORS);
+  const defect = findDefect(equipmentId, defectId);
+  if (defect.status !== 'ABERTO') throw new DemoError(422, 'Apenas defeitos em aberto podem ser editados.');
+  defect.description = description.trim() || 'Defeito registrado';
+  audit('EQUIPMENT_UPDATE', 'Equipment', equipmentId, `Defeito editado: ${defect.description}`);
   persist();
   return defect;
 }
 
-export function resolveDefect(defectId: string): DefectResponse {
+export function resolveDefect(equipmentId: string, defectId: string): DefectResponse {
   requireRole(EDITORS);
-  const defect = state.defects.find((d) => d.id === defectId);
-  if (!defect) throw new DemoError(404, 'Defeito não encontrado.');
+  const defect = findDefect(equipmentId, defectId);
+  // Resolver de novo não muda nada: a data de resolução é a da primeira vez.
+  if (defect.status === 'RESOLVIDO') return defect;
+
   defect.status = 'RESOLVIDO';
   defect.resolvedAt = nowIso();
+  const previous = state.defectPreviousStatus[defect.id];
+  delete state.defectPreviousStatus[defect.id];
 
-  const eq = state.equipments.find((e) => e.id === defect.equipmentId);
+  const eq = state.equipments.find((e) => e.id === equipmentId);
   if (eq) {
-    // Devolve ao status anterior; sem registro, cai no estoque como DISPONIVEL.
-    const previous = previousStatusByDefect.get(defect.id);
-    eq.status = previous && previous !== 'MANUTENCAO' ? previous : 'DISPONIVEL';
-    if (shouldClearUser(eq.status)) eq.equipmentUser = undefined;
-    previousStatusByDefect.delete(defect.id);
+    // Só sai de MANUTENCAO quando não sobra nenhum defeito aberto; sem registro, cai no estoque.
+    if (openDefectsOf(eq.id).length === 0) {
+      eq.status = previous ?? 'DISPONIVEL';
+      if (shouldClearUser(eq.status)) eq.equipmentUser = undefined;
+    }
     refreshDefectFlag(eq.id);
-    audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito do equipamento ${eq.assetNumber} marcado como resolvido.`);
+    audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito resolvido: ${defect.description}`);
   }
   persist();
   return defect;

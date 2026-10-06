@@ -147,9 +147,9 @@ on('POST', /^\/equipments\/([^/]+)\/defects$/, ({ m, body }) =>
   db.createDefect(m[1], String(body.description ?? '')));
 
 on('PUT', /^\/equipments\/([^/]+)\/defects\/([^/]+)$/, ({ m, body }) =>
-  db.updateDefect(m[2], String(body.description ?? '')));
+  db.updateDefect(m[1], m[2], String(body.description ?? '')));
 
-on('PATCH', /^\/equipments\/([^/]+)\/defects\/([^/]+)\/resolve$/, ({ m }) => db.resolveDefect(m[2]));
+on('PATCH', /^\/equipments\/([^/]+)\/defects\/([^/]+)\/resolve$/, ({ m }) => db.resolveDefect(m[1], m[2]));
 
 // Equipamentos — CRUD por id (depois das literais)
 on('POST', /^\/equipments$/, ({ body }) => db.createEquipment(body as never));

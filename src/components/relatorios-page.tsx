@@ -1,21 +1,50 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, Filter, FileBarChart, ClipboardList, Search, Check } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Filter,
+  FileBarChart,
+  ClipboardList,
+  Search,
+  Check,
+} from "lucide-react";
 import { sectorApi } from "../api/sector.api";
 import { equipmentApi } from "../api/equipment.api";
 import { reportApi, downloadBlob } from "../api/report.api";
 import type { EquipmentType, EquipmentStatus, EquipmentResponseDTO } from "../types";
-import { EQUIPMENT_TYPE_LABELS, EQUIPMENT_STATUS_LABELS, getEquipmentShortLabel, getEquipmentDropdownSecondary } from "../types";
+import {
+  EQUIPMENT_TYPE_LABELS,
+  EQUIPMENT_STATUS_LABELS,
+  getEquipmentShortLabel,
+  getEquipmentDropdownSecondary,
+} from "../types";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { toast } from "sonner";
 
 const TIPOS: EquipmentType[] = [
-  "PC", "MONITOR", "TECLADO", "NOTEBOOK", "IMPRESSORA", "ROTEADOR", "SWITCH",
-  "SERVIDOR", "ARMAZENAMENTO", "ESTABILIZADOR", "NOBREAK", "ROTULADORA", "OUTROS",
+  "PC",
+  "MONITOR",
+  "TECLADO",
+  "NOTEBOOK",
+  "IMPRESSORA",
+  "ROTEADOR",
+  "SWITCH",
+  "SERVIDOR",
+  "ARMAZENAMENTO",
+  "ESTABILIZADOR",
+  "NOBREAK",
+  "ROTULADORA",
+  "OUTROS",
 ];
 
 const STATUSES: EquipmentStatus[] = [
-  "EM_USO", "DISPONIVEL", "PROVISORIO", "MANUTENCAO", "INSERVIVEL", "BAIXADO",
+  "EM_USO",
+  "DISPONIVEL",
+  "PROVISORIO",
+  "MANUTENCAO",
+  "INSERVIVEL",
+  "BAIXADO",
 ];
 
 const SELECT_CLASS =
@@ -27,7 +56,9 @@ export function RelatoriosPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="mb-6">
-        <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>Relatórios</h3>
+        <h3 className="text-[18px] text-foreground" style={{ fontWeight: 700 }}>
+          Relatórios
+        </h3>
         <p className="text-[13px] text-muted-foreground mt-0.5">
           Gere documentos em PDF para anexar em processos, enviar à chefia ou conferência interna.
         </p>
@@ -80,7 +111,9 @@ function InventoryCard() {
           <FileText className="w-5 h-5 text-primary" />
         </span>
         <div>
-          <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>Relatório de Inventário</h4>
+          <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>
+            Relatório de Inventário
+          </h4>
           <p className="text-[12px] text-muted-foreground mt-0.5">
             Lista dos bens (patrimônio, tipo, marca, status, responsável e setor) com totais.
             Opcionalmente filtre por setor, tipo ou status.
@@ -89,32 +122,72 @@ function InventoryCard() {
       </div>
 
       <div className="p-5 space-y-4">
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground uppercase tracking-wider" style={{ fontWeight: 700 }}>
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground uppercase tracking-wider"
+          style={{ fontWeight: 700 }}
+        >
           <Filter className="w-3.5 h-3.5" /> Filtros (opcionais)
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="block text-[12px] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>Setor</label>
-            <select className={SELECT_CLASS} value={setorId} onChange={(e) => setSetorId(e.target.value)}>
+            <label
+              className="block text-[12px] text-muted-foreground mb-1.5"
+              style={{ fontWeight: 500 }}
+            >
+              Setor
+            </label>
+            <select
+              className={SELECT_CLASS}
+              value={setorId}
+              onChange={(e) => setSetorId(e.target.value)}
+            >
               <option value="">Todos os setores</option>
               {sectors?.map((s) => (
-                <option key={s.id} value={s.id}>{s.acronym} — {s.fullName}</option>
+                <option key={s.id} value={s.id}>
+                  {s.acronym} — {s.fullName}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-[12px] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>Tipo</label>
-            <select className={SELECT_CLASS} value={tipo} onChange={(e) => setTipo(e.target.value as EquipmentType | "")}>
+            <label
+              className="block text-[12px] text-muted-foreground mb-1.5"
+              style={{ fontWeight: 500 }}
+            >
+              Tipo
+            </label>
+            <select
+              className={SELECT_CLASS}
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value as EquipmentType | "")}
+            >
               <option value="">Todos os tipos</option>
-              {TIPOS.map((t) => <option key={t} value={t}>{EQUIPMENT_TYPE_LABELS[t]}</option>)}
+              {TIPOS.map((t) => (
+                <option key={t} value={t}>
+                  {EQUIPMENT_TYPE_LABELS[t]}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="block text-[12px] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>Status</label>
-            <select className={SELECT_CLASS} value={status} onChange={(e) => setStatus(e.target.value as EquipmentStatus | "")}>
+            <label
+              className="block text-[12px] text-muted-foreground mb-1.5"
+              style={{ fontWeight: 500 }}
+            >
+              Status
+            </label>
+            <select
+              className={SELECT_CLASS}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as EquipmentStatus | "")}
+            >
               <option value="">Todos os status</option>
-              {STATUSES.map((s) => <option key={s} value={s}>{EQUIPMENT_STATUS_LABELS[s]}</option>)}
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {EQUIPMENT_STATUS_LABELS[s]}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -125,7 +198,11 @@ function InventoryCard() {
           className="w-full sm:w-auto bg-primary hover:bg-[#075985] text-white px-5 py-2.5 rounded-lg text-[13px] shadow-lg shadow-sky-600/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
           style={{ fontWeight: 600 }}
         >
-          {generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+          {generating ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
           {generating ? "Gerando PDF..." : "Gerar PDF"}
         </button>
       </div>
@@ -179,7 +256,9 @@ function EquipmentSheetCard() {
           <ClipboardList className="w-5 h-5 text-primary" />
         </span>
         <div>
-          <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>Ficha do Equipamento</h4>
+          <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>
+            Ficha do Equipamento
+          </h4>
           <p className="text-[12px] text-muted-foreground mt-0.5">
             Uma página por bem: dados, localização atual e histórico de movimentações e defeitos.
             Busque pelo patrimônio, série, marca ou responsável.
@@ -195,7 +274,9 @@ function EquipmentSheetCard() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
               placeholder="Buscar equipamento..."
               className="w-full pl-10 pr-3 py-2.5 bg-background border border-border rounded-lg text-[13px] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
             />
@@ -211,7 +292,9 @@ function EquipmentSheetCard() {
         </div>
 
         {searched && !searching && results.length === 0 && (
-          <p className="text-[12px] text-muted-foreground text-center py-2">Nenhum equipamento encontrado.</p>
+          <p className="text-[12px] text-muted-foreground text-center py-2">
+            Nenhum equipamento encontrado.
+          </p>
         )}
 
         {results.length > 0 && (
@@ -224,12 +307,21 @@ function EquipmentSheetCard() {
                   onClick={() => setSelected(e)}
                   className={`w-full text-left px-3 py-2.5 transition-colors flex items-center gap-2 ${isSel ? "bg-primary/10" : "hover:bg-muted/50"}`}
                 >
-                  <span className={`w-4 h-4 shrink-0 rounded-full border flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-border"}`}>
+                  <span
+                    className={`w-4 h-4 shrink-0 rounded-full border flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-border"}`}
+                  >
                     {isSel && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[13px] text-foreground truncate" style={{ fontWeight: 500 }}>{getEquipmentShortLabel(e)}</span>
-                    <span className="block text-[11px] text-muted-foreground truncate">{getEquipmentDropdownSecondary(e)}</span>
+                    <span
+                      className="block text-[13px] text-foreground truncate"
+                      style={{ fontWeight: 500 }}
+                    >
+                      {getEquipmentShortLabel(e)}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground truncate">
+                      {getEquipmentDropdownSecondary(e)}
+                    </span>
                   </span>
                 </button>
               );
@@ -243,7 +335,11 @@ function EquipmentSheetCard() {
           className="w-full sm:w-auto bg-primary hover:bg-[#075985] text-white px-5 py-2.5 rounded-lg text-[13px] shadow-lg shadow-sky-600/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
           style={{ fontWeight: 600 }}
         >
-          {generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+          {generating ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
           {generating ? "Gerando ficha..." : "Gerar ficha (PDF)"}
         </button>
       </div>
@@ -251,7 +347,7 @@ function EquipmentSheetCard() {
   );
 }
 
-// ─── Resumo Executivo ─────────────────────────────────────────────────────────
+// ─── Resumo Quantitativo ─────────────────────────────────────────────────────────
 
 function ExecutiveSummaryCard() {
   const [generating, setGenerating] = useState(false);
@@ -277,10 +373,12 @@ function ExecutiveSummaryCard() {
             <FileBarChart className="w-5 h-5 text-primary" />
           </span>
           <div>
-            <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>Resumo Executivo</h4>
+            <h4 className="text-[15px] text-foreground" style={{ fontWeight: 700 }}>
+              Resumo Quantitativo
+            </h4>
             <p className="text-[12px] text-muted-foreground mt-0.5">
-              Visão gerencial: total de equipamentos, distribuição por status, tipo e setor,
-              e defeitos em aberto. Sem filtros — retrato atual do patrimônio.
+              Visão gerencial: total de equipamentos, distribuição por status, tipo e setor, e
+              defeitos em aberto. Sem filtros — retrato atual do patrimônio.
             </p>
           </div>
         </div>
@@ -290,7 +388,11 @@ function ExecutiveSummaryCard() {
           className="shrink-0 bg-primary hover:bg-[#075985] text-white px-5 py-2.5 rounded-lg text-[13px] shadow-lg shadow-sky-600/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
           style={{ fontWeight: 600 }}
         >
-          {generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+          {generating ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
           {generating ? "Gerando PDF..." : "Gerar PDF"}
         </button>
       </div>

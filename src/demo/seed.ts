@@ -242,6 +242,8 @@ export function buildSeed() {
 
   // Defeitos: alguns abertos (equipamento fica em MANUTENCAO) e alguns já resolvidos.
   const defects: DefectResponse[] = [];
+  // Para onde cada equipamento volta quando o defeito aberto for resolvido (coluna previous_status).
+  const defectPreviousStatus: Record<string, EquipmentStatus> = {};
   const inMaintenance = equipments.filter((e) => e.status === 'MANUTENCAO');
   const DEFECT_TEXTS = [
     'Não liga após queda de energia.',
@@ -255,6 +257,7 @@ export function buildSeed() {
   ] as const;
 
   inMaintenance.forEach((eq, i) => {
+    defectPreviousStatus[uid('d', i + 1)] = 'DISPONIVEL';
     defects.push({
       id: uid('d', i + 1),
       equipmentId: eq.id,
@@ -267,17 +270,20 @@ export function buildSeed() {
     eq.hasOpenDefect = true;
   });
 
-  // Histórico de defeitos já resolvidos, para a tela de histórico não nascer vazia.
+  // Histórico de defeitos já resolvidos, para a tela de histórico não nascer vazia. A tela abre no
+  // mês corrente, então os primeiros foram resolvidos neste mês; os demais, nos meses anteriores.
   const resolvedPool = equipments.filter((e) => e.status === 'EM_USO' || e.status === 'DISPONIVEL').slice(0, 14);
+  const daysIntoMonth = new Date().getDate() - 1;
   resolvedPool.forEach((eq, i) => {
-    const reported = int(60, 300);
+    const resolved = i < 6 ? int(0, daysIntoMonth) : int(35, 280);
+    const reported = resolved + int(2, 20);
     defects.push({
       id: uid('e', i + 1),
       equipmentId: eq.id,
       description: pick(DEFECT_TEXTS),
       reportedAt: isoDaysAgo(reported, 10),
       reportedBy: pick(['usuario.demo', 'carla.duarte']),
-      resolvedAt: isoDaysAgo(reported - int(2, 20), 16),
+      resolvedAt: isoDaysAgo(resolved, 8),
       status: 'RESOLVIDO',
     });
   });
@@ -306,7 +312,7 @@ export function buildSeed() {
   }
   audit.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  return { sectors: [...SEED_SECTORS], equipments, defects, users: [...SEED_USERS], audit };
+  return { sectors: [...SEED_SECTORS], equipments, defects, defectPreviousStatus, users: [...SEED_USERS], audit };
 }
 
 function describeAction(action: AuditActionType, asset: string, sector: string): string {

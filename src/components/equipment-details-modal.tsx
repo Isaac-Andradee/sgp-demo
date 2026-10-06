@@ -63,6 +63,7 @@ export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Prop
       queryClient.invalidateQueries({ queryKey: ["equipment-defects-open", equipment?.id] });
       queryClient.invalidateQueries({ queryKey: ["equipments-paged"] });
       queryClient.invalidateQueries({ queryKey: ["equipments-filter"] });
+      queryClient.invalidateQueries({ queryKey: ["kpis"] });
       setDefectDescription("");
       setDefectFormOpen(false);
       toast.success("Defeito registrado.");
@@ -97,6 +98,10 @@ export function EquipmentDetailsModal({ open, onClose, equipment, onEdit }: Prop
       queryClient.invalidateQueries({ queryKey: ["equipment-defects-open", equipment?.id] });
       queryClient.invalidateQueries({ queryKey: ["equipments-paged"] });
       queryClient.invalidateQueries({ queryKey: ["equipments-filter"] });
+      // O defeito resolvido entra no histórico e o equipamento sai de manutenção.
+      queryClient.invalidateQueries({ queryKey: ["equipment-defects-history", equipment?.id] });
+      queryClient.invalidateQueries({ queryKey: ["equipment-defects-resolved-years", equipment?.id] });
+      queryClient.invalidateQueries({ queryKey: ["kpis"] });
       setEditingDefectId(null);
       toast.success("Defeito marcado como resolvido.");
     },
