@@ -83,7 +83,11 @@ Ao cadastrar sem informar o status, o sistema o deduz:
 - **Limpeza de responsável** — mover para `DISPONIVEL`, `MANUTENCAO`, `INSERVIVEL` ou `BAIXADO`
   limpa o responsável. Impede o estado "máquina na oficina, mas ainda atribuída ao João".
 - **Defeito preserva o status anterior** — ao resolver, o equipamento volta ao estado em que
-  estava, em vez de um valor arbitrário.
+  estava, em vez de um valor arbitrário. Com vários defeitos abertos, ele só sai da manutenção
+  quando o último é resolvido, em qualquer ordem; o que entrou em manutenção por uma troca volta
+  ao estoque como `DISPONIVEL`.
+- **Histórico de defeitos** — lista os defeitos resolvidos por equipamento, mês e ano (pela data
+  de resolução), e a resolução também entra na auditoria.
 - **Patrimônio único** — cadastro duplicado é bloqueado com mensagem clara.
 - **Login padronizado** `nome.sobrenome`, com sufixo numérico em caso de colisão.
 - **Auditoria** — toda operação relevante gera registro imutável. A busca é feita no servidor
