@@ -56,11 +56,6 @@ export function DemoAccountPicker() {
           </button>
         ))}
       </div>
-
-      <p className="mt-3 text-[11px] text-amber-800/70 dark:text-amber-300/70">
-        Ou use qualquer login acima com a senha <code className="font-mono">{DEMO_PASSWORD}</code>.
-        Nesta demonstração a senha não é verificada.
-      </p>
     </div>
   );
 }

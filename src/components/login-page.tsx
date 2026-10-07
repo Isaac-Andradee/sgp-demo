@@ -132,7 +132,7 @@ export function LoginPage() {
       ) {
         setError("Conta bloqueada por tentativas excessivas. Tente novamente em 15 minutos.");
       } else if (status === 401) {
-        setError("Credenciais inválidas. Verifique usuário e senha.");
+        setError("Esse botão não funciona no modo demonstração. Escolha um perfil abaixo para entrar.");
       } else {
         setError("Erro ao conectar ao servidor. Tente novamente.");
       }
