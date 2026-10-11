@@ -381,7 +381,7 @@ export function swapEquipment(dto: SwapEquipmentDTO) {
     outgoing.currentSector = { ...storage };
     outgoing.equipmentUser = undefined;
     // Saiu do setor e foi para o almoxarifado: consertado, volta como DISPONIVEL — não EM_USO sem dono.
-    openDefect(outgoing, dto.defectDescription?.trim() || 'Defeito relatado durante substituição em campo.', 'DISPONIVEL');
+    openDefectOnSwap(outgoing, dto.defectDescription ?? '');
   } else {
     const backToStorage = originSector.acronym.toUpperCase() === STORAGE_SECTOR;
     outgoing.currentSector = originSector;
@@ -426,36 +426,58 @@ function openDefectsOf(equipmentId: string): DefectResponse[] {
   return state.defects.filter((d) => d.equipmentId === equipmentId && d.status === 'ABERTO');
 }
 
-/**
- * Abre um defeito e põe o equipamento em MANUTENCAO, guardando o status para onde ele volta.
- * Com outro defeito já aberto, herda o status guardado por ele: assim, qualquer que seja a ordem
- * de resolução, o último defeito resolvido devolve o equipamento ao estado de antes do primeiro.
- */
-function openDefect(eq: EquipmentResponseDTO, description: string, returnStatus: EquipmentStatus = eq.status): DefectResponse {
-  const alreadyOpen = openDefectsOf(eq.id)[0];
-  const previous = alreadyOpen ? state.defectPreviousStatus[alreadyOpen.id] : returnStatus;
+const DEFAULT_DEFECT_DESCRIPTION = 'Defeito registrado';
 
+function newDefect(eq: EquipmentResponseDTO, description: string, previous: EquipmentStatus | undefined): DefectResponse {
   const defect: DefectResponse = {
     id: newId(),
     equipmentId: eq.id,
-    description,
+    description: description.trim() || DEFAULT_DEFECT_DESCRIPTION,
     reportedAt: nowIso(),
     reportedBy: actor(),
     resolvedAt: null,
     status: 'ABERTO',
   };
   state.defects.unshift(defect);
-  if (previous && previous !== 'MANUTENCAO') state.defectPreviousStatus[defect.id] = previous;
-  eq.status = 'MANUTENCAO';
-  eq.equipmentUser = undefined;
+  if (previous) state.defectPreviousStatus[defect.id] = previous;
   eq.hasOpenDefect = true;
   return defect;
+}
+
+function sendToMaintenance(eq: EquipmentResponseDTO) {
+  eq.status = 'MANUTENCAO';
+  if (shouldClearUser(eq.status)) eq.equipmentUser = undefined;
+}
+
+/**
+ * Espelha EquipmentDefectService.create: o primeiro defeito aberto manda o equipamento para
+ * MANUTENCAO e guarda o status em que ele estava; os seguintes herdam esse mesmo status. Assim, o
+ * último defeito resolvido devolve o equipamento ao estado de antes do primeiro, em qualquer ordem.
+ */
+function openDefect(eq: EquipmentResponseDTO, description: string): DefectResponse {
+  const open = openDefectsOf(eq.id);
+  const previous = open.length === 0
+    ? eq.status
+    : open.map((d) => state.defectPreviousStatus[d.id]).find(Boolean);
+  if (open.length === 0) sendToMaintenance(eq);
+  return newDefect(eq, description, previous);
+}
+
+/**
+ * Espelha EquipmentDefectService.createOnSwap: o equipamento retirado vai para o almoxarifado sem
+ * responsável, então, consertado, volta como DISPONIVEL — e os defeitos já abertos também.
+ */
+function openDefectOnSwap(eq: EquipmentResponseDTO, description: string): DefectResponse {
+  const open = openDefectsOf(eq.id);
+  if (open.length === 0) sendToMaintenance(eq);
+  else open.forEach((d) => { state.defectPreviousStatus[d.id] = 'DISPONIVEL'; });
+  return newDefect(eq, description, 'DISPONIVEL');
 }
 
 export function createDefect(equipmentId: string, description: string): DefectResponse {
   requireRole(EDITORS);
   const eq = findEquipment(equipmentId);
-  const defect = openDefect(eq, description.trim() || 'Defeito registrado');
+  const defect = openDefect(eq, description);
   audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito registrado: ${defect.description}`);
   persist();
   return defect;
@@ -470,18 +492,23 @@ function findDefect(equipmentId: string, defectId: string): DefectResponse {
 export function updateDefect(equipmentId: string, defectId: string, description: string): DefectResponse {
   requireRole(EDITORS);
   const defect = findDefect(equipmentId, defectId);
-  if (defect.status !== 'ABERTO') throw new DemoError(422, 'Apenas defeitos em aberto podem ser editados.');
-  defect.description = description.trim() || 'Defeito registrado';
+  if (defect.status !== 'ABERTO') throw new DemoError(400, 'Apenas defeitos em aberto podem ser editados.');
+  defect.description = description.trim() || DEFAULT_DEFECT_DESCRIPTION;
   audit('EQUIPMENT_UPDATE', 'Equipment', equipmentId, `Defeito editado: ${defect.description}`);
   persist();
   return defect;
 }
 
+/**
+ * Espelha EquipmentDefectService.resolve: confere a posse antes de gravar (404), recusa defeito já
+ * resolvido (400 — a data de resolução é a da primeira vez) e só tira o equipamento de MANUTENCAO
+ * quando o último defeito aberto é resolvido. Sem status anterior registrado, o equipamento fica
+ * como está.
+ */
 export function resolveDefect(equipmentId: string, defectId: string): DefectResponse {
   requireRole(EDITORS);
   const defect = findDefect(equipmentId, defectId);
-  // Resolver de novo não muda nada: a data de resolução é a da primeira vez.
-  if (defect.status === 'RESOLVIDO') return defect;
+  if (defect.status !== 'ABERTO') throw new DemoError(400, 'Este defeito já foi resolvido.');
 
   defect.status = 'RESOLVIDO';
   defect.resolvedAt = nowIso();
@@ -489,15 +516,22 @@ export function resolveDefect(equipmentId: string, defectId: string): DefectResp
   delete state.defectPreviousStatus[defect.id];
 
   const eq = state.equipments.find((e) => e.id === equipmentId);
-  if (eq) {
-    // Só sai de MANUTENCAO quando não sobra nenhum defeito aberto; sem registro, cai no estoque.
-    if (openDefectsOf(eq.id).length === 0) {
-      eq.status = previous ?? 'DISPONIVEL';
-      if (shouldClearUser(eq.status)) eq.equipmentUser = undefined;
+  if (previous) {
+    const stillOpen = openDefectsOf(equipmentId);
+    if (stillOpen.length === 0) {
+      if (eq) {
+        eq.status = previous;
+        if (shouldClearUser(eq.status)) eq.equipmentUser = undefined;
+      }
+    } else {
+      // Defeito aberto sem status anterior (dado antigo) recebe o do que foi resolvido.
+      stillOpen
+        .filter((d) => !state.defectPreviousStatus[d.id])
+        .forEach((d) => { state.defectPreviousStatus[d.id] = previous; });
     }
-    refreshDefectFlag(eq.id);
-    audit('EQUIPMENT_UPDATE', 'Equipment', eq.id, `Defeito resolvido: ${defect.description}`);
   }
+  refreshDefectFlag(equipmentId);
+  audit('EQUIPMENT_UPDATE', 'Equipment', equipmentId, `Defeito resolvido: ${defect.description}`);
   persist();
   return defect;
 }
